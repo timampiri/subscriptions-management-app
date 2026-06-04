@@ -13,6 +13,7 @@ interface SubscriptionsScreenProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onFilterOpenChange?: (open: boolean) => void;
+  initialUsageFilter?: string;
 }
 
 const CATEGORIES = ["Entertainment", "Music", "Productivity", "AI Tools", "Design", "Storage", "Developer Tools", "Security", "Education"];
@@ -201,13 +202,13 @@ function CalendarView({ subs, onSelect }: { subs: Subscription[]; onSelect: (id:
   );
 }
 
-export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange }: SubscriptionsScreenProps) {
+export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initialUsageFilter }: SubscriptionsScreenProps) {
   const [view, setView] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [source, setSource] = useState<SourceKey>("All");
   const [accounts, setAccounts] = useState<Set<string>>(new Set());
-  const [usage, setUsage] = useState<UsageKey>("All");
+  const [usage, setUsage] = useState<UsageKey>((initialUsageFilter as UsageKey) ?? "All");
   const [filterOpen, setFilterOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 

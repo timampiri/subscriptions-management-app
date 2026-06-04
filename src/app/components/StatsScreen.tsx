@@ -1,6 +1,15 @@
 import { useState } from "react";
+import { X, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, BarChart, Bar, ResponsiveContainer } from "recharts";
 import { CATEGORY_BREAKDOWN, MONTHLY_SPEND_TREND, SUBSCRIPTIONS, totalMonthly } from "./data";
+
+const MAIN_CATS = new Set(CATEGORY_BREAKDOWN.filter(c => c.category !== "Other").map(c => c.category));
+const subsByCat: Record<string, typeof SUBSCRIPTIONS> = {};
+CATEGORY_BREAKDOWN.forEach(c => (subsByCat[c.category] = []));
+SUBSCRIPTIONS.filter(s => s.status !== "cancelled").forEach(s => {
+  if (MAIN_CATS.has(s.category)) subsByCat[s.category]?.push(s);
+  else subsByCat["Other"]?.push(s);
+});
 
 const monthly = totalMonthly(SUBSCRIPTIONS);
 
@@ -17,6 +26,7 @@ const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { valu
 
 export function StatsScreen() {
   const [timeline, setTimeline] = useState<"6m" | "1y">("6m");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const topSubs = [...SUBSCRIPTIONS].filter(s => s.status === "active").sort((a, b) => b.amount - a.amount).slice(0, 4);
   const trendData = timeline === "6m" ? MONTHLY_SPEND_TREND.slice(-6) : MONTHLY_SPEND_TREND;
 
@@ -113,14 +123,31 @@ export function StatsScreen() {
               ))}
             </Pie>
           </PieChart>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
-            {CATEGORY_BREAKDOWN.map((cat) => (
-              <div key={cat.category} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
-                <p style={{ fontSize: "11px", color: "var(--app-text-secondary)", flex: 1 }}>{cat.category}</p>
-                <p style={{ fontSize: "11px", color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace" }}>${cat.amount.toFixed(0)}</p>
-              </div>
-            ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", flex: 1 }}>
+            {CATEGORY_BREAKDOWN.map((cat) => {
+              const count = subsByCat[cat.category]?.length ?? 0;
+              return (
+                <button
+                  key={cat.category}
+                  onClick={() => count > 0 && setSelectedCategory(cat.category)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: "8px",
+                    background: "none", border: "none", padding: "2px 0",
+                    cursor: count > 0 ? "pointer" : "default", textAlign: "left",
+                    fontFamily: "'DM Sans', sans-serif",
+                  }}
+                >
+                  <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: cat.color, flexShrink: 0 }} />
+                  <p style={{ fontSize: "11px", color: "var(--app-text-secondary)", flex: 1 }}>{cat.category}</p>
+                  {count > 0 && (
+                    <span style={{ fontSize: "10px", color: "var(--app-text-muted)", background: "var(--app-surface)", borderRadius: "999px", padding: "1px 6px", fontFamily: "'DM Mono', monospace" }}>
+                      {count}
+                    </span>
+                  )}
+                  <p style={{ fontSize: "11px", color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace" }}>${cat.amount.toFixed(0)}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -139,6 +166,52 @@ export function StatsScreen() {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Category popup */}
+      {selectedCategory && (() => {
+        const subs = subsByCat[selectedCategory] ?? [];
+        const cat = CATEGORY_BREAKDOWN.find(c => c.category === selectedCategory)!;
+        return (
+          <div
+            onClick={() => setSelectedCategory(null)}
+            style={{ position: "absolute", inset: 0, zIndex: 60, display: "flex", alignItems: "flex-end", background: "rgba(0,0,0,0.32)" }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{ width: "100%", padding: "20px", maxHeight: "75%", overflowY: "auto", background: "var(--app-card)", borderTopLeftRadius: "20px", borderTopRightRadius: "20px", boxShadow: "0 -10px 30px rgba(0,0,0,0.16)", scrollbarWidth: "none", fontFamily: "'DM Sans', sans-serif" }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ width: "12px", height: "12px", borderRadius: "50%", background: cat.color }} />
+                  <div>
+                    <p style={{ fontSize: "15px", fontWeight: 700, color: "var(--app-text-primary)" }}>{selectedCategory}</p>
+                    <p style={{ fontSize: "11px", color: "var(--app-text-muted)" }}>{subs.length} subscription{subs.length !== 1 ? "s" : ""} · ${cat.amount.toFixed(0)}/mo</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedCategory(null)} style={{ width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--app-surface)", border: "none", cursor: "pointer" }}>
+                  <X size={14} color="var(--app-text-secondary)" />
+                </button>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {subs.map(sub => (
+                  <div key={sub.id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px", borderRadius: "14px", background: "var(--app-surface)", border: "1px solid var(--app-border)" }}>
+                    <span style={{ fontSize: "22px" }}>{sub.emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: "14px", color: "var(--app-text-primary)", fontWeight: 500 }}>{sub.name}</p>
+                      <p style={{ fontSize: "11px", color: "var(--app-text-muted)" }}>{sub.category}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>${sub.amount.toFixed(2)}</p>
+                      <p style={{ fontSize: "10px", color: "var(--app-text-muted)", marginTop: "2px" }}>/{sub.billingCycle === "monthly" ? "mo" : sub.billingCycle === "annual" ? "yr" : "wk"}</p>
+                    </div>
+                    <ChevronRight size={14} color="var(--app-text-muted)" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Detection source */}
       <div style={{ padding: "0 20px 24px" }}>

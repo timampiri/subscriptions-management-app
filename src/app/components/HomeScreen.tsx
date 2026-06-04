@@ -18,9 +18,10 @@ interface HomeScreenProps {
   onSelectSubscription: (id: string) => void;
   onNavigate: (s: "subscriptions" | "insights" | "add" | "stats") => void;
   onConnectNew: () => void;
+  onNavigateRarelyUsed?: () => void;
 }
 
-export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew }: HomeScreenProps) {
+export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onNavigateRarelyUsed }: HomeScreenProps) {
   const [alertsSeen, setAlertsSeen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<LinkedAccount | null>(null);
   const monthly = totalMonthly(SUBSCRIPTIONS);
@@ -82,7 +83,7 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew }: H
         const kpis = [
           { label: "Monthly", value: `$${monthly.toFixed(0)}`, sub: `of $250 monthly budget`, color: "var(--app-text-primary)", route: "stats" as const },
           { label: "Active", value: String(active.length), sub: "subscriptions", color: "var(--app-text-primary)", route: "subscriptions" as const },
-          { label: "Rarely used", value: String(rarelyUsed), sub: "review these", color: "var(--app-red)", route: "subscriptions" as const },
+          { label: "Rarely used", value: String(rarelyUsed), sub: "review these", color: "var(--app-red)", route: "subscriptions" as const, onClickOverride: onNavigateRarelyUsed },
           { label: "Renewals", value: String(upcomingCount), sub: "this week", color: "var(--app-text-primary)", route: "insights" as const },
         ];
         return (
@@ -90,7 +91,7 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew }: H
             {kpis.map(kpi => (
               <button
                 key={kpi.label}
-                onClick={() => onNavigate(kpi.route)}
+                onClick={() => kpi.onClickOverride ? kpi.onClickOverride() : onNavigate(kpi.route)}
                 style={{
                   padding: "12px 14px", borderRadius: "16px",
                   background: "var(--app-card)", border: "1px solid var(--app-border)",

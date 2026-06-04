@@ -20,11 +20,13 @@ export default function App() {
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [subsFilterOpen, setSubsFilterOpen] = useState(false);
+  const [subsInitialUsageFilter, setSubsInitialUsageFilter] = useState<string | null>(null);
   const [dark, setDark] = useState(false);
 
   const goTo = (s: Screen) => {
     setPrevScreen(screen);
     const target = variantB && (s === "stats" || s === "insights") ? "analyze" : s;
+    if (target !== "subscriptions") setSubsInitialUsageFilter(null);
     setScreen(target);
   };
 
@@ -107,6 +109,7 @@ export default function App() {
               onSelectSubscription={id => setSelectedSubscriptionId(id)}
               onNavigate={s => goTo(s)}
               onConnectNew={() => setConnecting(true)}
+              onNavigateRarelyUsed={() => { setSubsInitialUsageFilter("Rarely used"); goTo("subscriptions"); }}
             />
           )}
           {screen === "subscriptions" && (
@@ -114,6 +117,7 @@ export default function App() {
               onSelect={id => setSelectedSubscriptionId(id)}
               onAdd={() => goTo("add")}
               onFilterOpenChange={setSubsFilterOpen}
+              initialUsageFilter={subsInitialUsageFilter ?? undefined}
             />
           )}
           {screen === "insights" && (
