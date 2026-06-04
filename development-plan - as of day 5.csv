@@ -1,0 +1,82 @@
+,Task,Owner,Deadline,Status,Track,Comment,Est hrs,Actual hrs,Learnings
+Day 1 — Skeleton & Home,Set up Figma file with 390x844 phone canvas and seed design tokens (Wise-inspired forest green / lime palette),Rina,May 29,done,Core,Token-first approach to speed later iteration,1,1,Naming tokens by role (app-blue / app-surface) beats naming by hex
+May 29 (Fri),Prototype bottom navigation (Home / Subs / Stats / Insights / Profile) shared across all screens,Rina,May 29,done,Core,(H4) Consistency & standards — same nav anchors orientation,0.5,0.5,Persistent nav reduces 'where am I' moments in tests
+,Prototype Home screen with 4-card KPI grid above the fold (Monthly / Active / Rarely used / Renewals),Rina,May 29,done,Core,(H1) Summary metrics visible immediately on load,2,2,KPIs above the fold answer 'should I worry?' in <1s
+,Design SubscriptionCard component (emoji + name + category + amount + usage tag + next renewal),Rina,May 29,done,Core,(H6) Usage tag (Heavy/Moderate/Rare) removes need to recall which services are active,1,1.5,Usage tag was the surprise win — reframes whole list
+,Design contextual renewal alert row — service + days-to-renewal + last-used + Review CTA in one line,Rina,May 29,done,Core,(H1) Replaces vague notification with specific actionable info,1,1,One-line alert > multi-step notification card
+,Build Subscriptions list skeleton with search bar and grouped categories,Rina,May 29,done,Core,Lays foundation for sort/filter layers added on Day 3,1.5,1.5,
+,Define sort control affordance on Subscriptions list,Rina,May 29,done,Core,(H7) Flexibility — power-user shortcut without cluttering default view,0.5,0.5,
+,Mirror prototype in React (Figma Make export) so user testing can hit real interactions,Rina,May 29,done,Core,Prototype-as-code lets test sessions feel like the real product,1,1.5,React-from-Figma cuts wireframe-to-tap-target gap in half
+,,,,,,,,,
+Day 2 — Add & Connect Account flow + Sev 4 fixes,Design Add screen with Manual / Screenshot tabs,Rina,May 30,done,Core,Two paths covers manual entry and OCR receipt parsing,1.5,1.5,
+May 30 (Sat),Design Connect Account screen with providers grouped by type (Email / Bank / Card / Wallet),Rina,May 30,done,Core,Grouping reduces visual noise vs alphabetical,1,1,Type-grouping over alphabetical — easier to scan
+,Design Permissions Review screen with 'What we will read' + 'What we will not do' cards before authentication,Rina,May 30,done,Core,"(H10, H5) Fixes Sev 4 — no privacy explanation before connecting bank/email",1.5,1.5,Bullet checks (✓/✗) read faster than legal paragraphs
+,Design 1.5s Secure Handoff micro-state (provider icon + spinner + '256-bit encrypted' line),Rina,May 30,done,Core,Trust-signaling beat between Permissions and Scanning,0.5,0.5,1.5s feels intentional not laggy — under 1s feels rushed
+,Design Scanning screen with animated progress bar + 'Usually under 30 seconds' time estimate,Rina,May 30,done,Core,(H1) Fixes Sev 3 — adds time estimate to investigation progress,1.5,1.5,Time estimate halves perceived wait
+,Replace alarming 'We will search your digital life' copy with specific per-provider wording,Rina,May 30,done,Core,(H2) Fixes Sev 3 — match real-world expectations,0.5,0.25,Specificity > softness when handling sensitive copy
+,Design Review Findings screen with source-status pills (Complete / Scanning / Queued),Rina,May 30,done,Core,(H1) Fixes recommendation — show source completion on results not just progress screen,2,2.5,Per-source status > single global progress
+,Rename ambiguous 'Cancel' button to 'Skip' with confirmation modal explaining consequence,Rina,May 30,done,Core,"(H3, H5) Fixes Sev 4 ambiguity — explicit action verb plus undo path",0.5,0.5,'Skip' + modal removes ambiguity better than 'Not mine'
+,Design confidence pill with tap-to-explainer popover (80%+ / 60-79% / <60% bands),Rina,May 30,done,Core,(H10) Fixes Sev 3 — explains '95% match' which was previously unexplained,0.5,1,Colour band gives quick read; popover answers depth-of-detail
+,Design empty state for 'no subscriptions detected in this account',Rina,May 30,done,Core,(H9) Fixes recommendation — error recovery + manual-add fallback,0.5,0.5,
+,Design Done summary screen with subs-added count + 'Connect another' option,Rina,May 30,done,Core,Closes the loop and offers a next step,0.5,0.5,
+,,,,,,,,,
+Day 3 — Insights + Profile + Stats + refinement,Prototype Insights screen — Potential Annual Savings hero + AI recommendations (warning / info / success) + Renewal alerts + Usage scores,Rina,May 31,done,Core,Anchors AI value prop on a money number,2,2,Dollar number at top sets tone for whole screen
+May 31 (Sun),Prototype Profile screen — profile header + Linked Accounts + Settings sections,Rina,May 31,done,Core,Standard settings pattern keeps cognitive load low,1,1,
+,Prototype Stats screen — KPI row + Spending Trend with 6M/1Y toggle + Category donut + Highest Costs bar + Detection Source,Rina,May 31,done,Core,Stats becomes the analytics home so Home stays decision-focused,2,2,Donut + bar combo reads faster than two donuts
+,Move Monthly Budget card from Home to top of Stats,Rina,May 31,done,Core,Reduces duplicate info on Home; budget belongs with analytics,0.5,0.5,Single home for budget cleared up Home hierarchy
+,Replace always-visible category chips with filter sheet triggered by Filter icon + add Source filter (Email / Bank / Manual),Rina,May 31,done,Core,"(H7) Power filters live behind one tap instead of cluttering the toolbar",1,1,Two-filter sheet read cleaner than 10 always-on chips
+,Soften confidence pill from bright lime to light mint background for readability,Rina,May 31,done,Core,Bright lime was reading as 'success status' not 'estimate',0.25,0.25,Saturation = certainty — soften for probabilistic data
+,Hide Add / Skip buttons and confidence pill for already-tracked items in Review Findings,Rina,May 31,done,Core,Removes false affordance — user cannot add what already exists,0.5,0.5,Tracked items needed a different visual contract
+,Design Detected-Subscription Detail screen mirroring Subscription Detail pattern with Skip / Add CTAs,Rina,May 31,done,Core,Detail view gives context for low-confidence matches before committing,1,1,'Why we detected this' card builds trust mid-decision
+,Add light / dark mode toggle in app shell,Rina,May 31,done,Core,Token-based theming made this 30-min job,0.5,0.5,Dark mode revealed two contrast bugs we missed in light
+,,,,,,,,,
+Day 4 — Testing prep + pilot,Draft user test script with 1 end-to-end task covering Connect → Review Findings → Insights/Stats decision → Manual Add (motivation-led framing — 'where is your money going'),Rina,Jun 1,done,Core,One deep task surfaces real navigation paths better than 5 shallow ones,1,1,Single deep task gives room for follow-up probes that 5 shallow tasks couldn't — closer to real product use
+Jun 1 (Mon),Recruit 2 in-person participants — heavy subscription users within walking distance,Rina,Jun 1,done,Core,In-person needs geographic proximity not just availability,0.5,0.5,Narrowed pool to local design community + flatmate's network — easier than I expected once distance was the filter
+,Schedule 2 in-person sessions in a quiet venue (60-min slots to allow deep task + follow-up probes),Rina,Jun 1,done,Core,60-min slot suits one deep task; 30 min felt rushed in pilot,0.5,0.5,60 min lets the task breathe and leaves time for probe-the-pause moments
+,Prepare printed consent forms for participants to sign before recording begins,Rina,Jun 1,done,Core,Mandatory pre-step — covers recording + data use + right to withdraw,0.5,0.5,Physical artefacts (consent + observation sheet) are easier to forget than digital ones; prepped both yesterday evening
+,Set up in-person recording rig — laptop screen capture + phone tripod for face / hand observation,Rina,Jun 1,done,Core,Two angles let me catch micro-reactions impossible to see remote,0.75,0.75,Phone tripod at 45° captures face + screen together — single-camera setup
+,Prepare debrief questionnaire — SUS (cut to 5 items) + 3 qualitative prompts,Rina,Jun 1,done,Core,Shorter scale + open probes suit a 60-min session,0.5,0.5,Pilot revealed 10-item SUS felt long after a deep task; 5 highest-signal items keeps energy in the room
+,Pilot test with 1 friend to catch script bugs before live sessions,Rina,Jun 1,done,Stretch,Cheap insurance against wasted live-session time,1,1.25,Pilot caught 2 leading task descriptions and one confusing consent clause — rewrote before live sessions
+,,,,,,,,,
+Day 5 — User testing + synthesis,Run 2 in-person user tests — collect signed consent first then 60-min session each (1 deep task + probes + SUS-5 + qualitative),Rina,Jun 2,in_progress,Core,Consent signed and recording started before any task begins,3,,
+Jun 2 (Tue — TODAY),Same-evening synthesis — top 5 findings + 3 critical fixes prioritised by severity × frequency,Rina,Jun 2,pending,Core,Synthesise while memory is fresh; batch later for writeup,1.5,,
+,Identify the screen with strongest disagreement between the 2 testers — A/B candidate (likely Review Findings or AI Insight card),Rina,Jun 2,pending,Core,Even with n=2 a clear split signals a worth-testing variable,0.5,,
+,Write A/B hypothesis + success metric (e.g. 'Skip language reduces accidental add by X%'),Rina,Jun 2,pending,Core,Hypothesis-first prevents fishing for any-significant-result,0.5,,
+,Annotate one screenshot per participant with key reaction moment,Rina,Jun 2,pending,Stretch,Visual artefacts make the writeup more credible,1,,
+,,,,,,,,,
+Day 6 — A/B variant + launch,Design variant B — alternative layout / copy for the A/B candidate screen,Rina,Jun 3,pending,Core,Keep one variable changed; otherwise can't attribute effect,1.5,,
+Jun 3 (Wed — Boxing 18:30),Prototype variant B in code with URL flag toggle (?variant=b),Rina,Jun 3,pending,Core,URL flag is the simplest way to serve two versions side-by-side,2,,
+,Write A/B test participant instructions + scoped tasks,Rina,Jun 3,pending,Core,Same task per variant so comparison is fair,0.5,,
+,Recruit 4 participants (2 per variant) with random assignment,Rina,Jun 3,pending,Core,Solo project so randomise via coin flip not algorithm,0.5,,
+,Set up tasks on usertesting.com (or similar) for both variants,Rina,Jun 3,pending,Core,Async platform lets tests run overnight,1,,
+,Launch A/B tests and monitor async responses,Rina,Jun 3,pending,Core,Submit before Boxing class at 18:30 so tests run overnight,0.5,,
+,Pre-register hypothesis on a public Notion page for accountability,Rina,Jun 3,pending,Stretch,Public pre-reg prevents post-hoc story-crafting,0.5,,
+,Add a 'rank preferred variant' follow-up question after participants see both,Rina,Jun 3,pending,Stretch,Within-subject preference signal complements between-subject metrics,0.5,,
+,,,,,,,,,
+Day 7 — A/B analysis + Fit & Finish round 1,Watch all 4 participant videos with focus on A/B screen interaction — face / voice / taps,Rina,Jun 4,pending,Core,'Doing' beats 'saying' — watch what they actually do,2,,
+Jun 4 (Thu — Zumba 19:00),Capture 1 key screenshot per participant showing reaction to A/B screens,Rina,Jun 4,pending,Core,Frames become evidence in the writeup and poster,0.5,,
+,Compare task completion times + error counts + qualitative ratings between variants,Rina,Jun 4,pending,Core,Use a simple 2x4 table; n=4 doesn't need stats software,1,,
+,Write up findings — which variant performed better and why; surprises vs confirmed hypothesis,Rina,Jun 4,pending,Core,Distinguish 'expected' from 'unexpected' findings clearly,1.5,,
+,Apply top 3 improvements identified from A/B + user testing results,Rina,Jun 4,pending,Core,Time-box to highest-impact fixes — not everything needs to land,2,,
+,Polish microinteractions — button presses + transitions + focus rings + hover states,Rina,Jun 4,pending,Core,Polish during fit-and-finish not during build phase,1,,
+,Accessibility pass — contrast 4.5:1 + visible focus rings + keyboard tab order + ARIA labels,Rina,Jun 4,pending,Core,WCAG 2.1 AA minimum per workspace conventions,1,,
+,,,,,,,,,
+Day 8 — Branding + final submission,Brainstorm 10 app name candidates and narrow to 1 (current name is placeholder),Rina,Jun 5,pending,Core,Name should hint at clarity / control over recurring charges,1,,
+Jun 5 (Fri — FINAL),Design app icon — light + dark variants,Rina,Jun 5,pending,Core,Icon needs to read at 24px and 1024px,1.5,,
+,Write tagline + short marketing description for poster and submission,Rina,Jun 5,pending,Core,One sentence that survives a 3-second scan,0.5,,
+,Final design review pass — consistency check across all 6 screens,Rina,Jun 5,pending,Core,Look for token drift / orphan styles / inconsistent spacing,1,,
+,Build project poster — Problem / Solution / Results,Rina,Jun 5,pending,Core,Three-panel structure mirrors course expectation,2,,
+,Record 1-minute video walkthrough of key features,Rina,Jun 5,pending,Core,Demo Connect flow + Review Findings as the hero moment,1,,
+,Prepare and rehearse 1-minute live pitch (3x runs),Rina,Jun 5,pending,Core,Rehearse out loud — silent rehearsal undercounts time,0.5,,
+,Snapshot development plan to PDF and submit,Rina,Jun 5,pending,Core,Final submission artefact,0.5,,
+,Deploy final live demo URL,Rina,Jun 5,pending,Core,Static host (Vercel / Netlify) — no backend needed,0.5,,
+,STRETCH — push notifications mockup screen (renewal reminders),Rina,Jun 5,pending,Stretch,Demonstrates renewal-alert system extending beyond the app,1.5,,
+,STRETCH — first-time onboarding flow (3-card carousel),Rina,Jun 5,pending,Stretch,Shows the value-prop walk-through new users would see,2,,
+,STRETCH — cancellation assistance flow (link out to provider cancel pages),Rina,Jun 5,pending,Stretch,Closes the loop on 'find unused subs' with action,2,,
+,STRETCH — subtle entrance animations on key cards (fade-in on first view),Rina,Jun 5,pending,Stretch,Adds polish without bloating the prototype,1,,
+,,,,,,,,,
+Outside constraints,Picsart full-time work Mon-Fri daytime — design / test windows are evenings 18:00+ and full weekends,Rina,recurring,active,,Limits weekday focus blocks to ~3-4 hours per evening,,,
+,Boxing class Wed 18:30 (1h) — affects Day 6 schedule,Rina,Jun 3,active,,Submit A/B tests before 18:30 so they run overnight,,,
+,Zumba class Thu 19:00 (1h) — affects Day 7 schedule,Rina,Jun 4,active,,Front-load A/B analysis to morning / midday,,,
+,GTV (Global Talent Visa UK) application prep — ongoing parallel project,Rina,recurring,active,,Visa work pulls weekend mornings,,,
+,Substack 2x/week + LinkedIn growth content — ongoing parallel commitments,Rina,recurring,active,,Content production batched on Sundays,,,

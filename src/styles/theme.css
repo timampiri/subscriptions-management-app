@@ -1,0 +1,292 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #F4F6FC;
+  --foreground: #0C0F22;
+  --card: #FFFFFF;
+  --card-foreground: #0C0F22;
+  --popover: #FFFFFF;
+  --popover-foreground: #0C0F22;
+  --primary: #4B7DE8;
+  --primary-foreground: #ffffff;
+  --secondary: #EDF0F8;
+  --secondary-foreground: #414669;
+  --muted: #EDF0F8;
+  --muted-foreground: #7A80A0;
+  --accent: #00B37D;
+  --accent-foreground: #ffffff;
+  --destructive: #D92638;
+  --destructive-foreground: #ffffff;
+  --border: rgba(13, 16, 40, 0.08);
+  --input: transparent;
+  --input-background: #EDF0F8;
+  --switch-background: #C8CEDE;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #4B7DE8;
+  --chart-1: #4B7DE8;
+  --chart-2: #00B37D;
+  --chart-3: #E06030;
+  --chart-4: #7C3AED;
+  --chart-5: #C47F00;
+  --radius: 1rem;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0C0F22;
+  --sidebar-primary: #4B7DE8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #EDF0F8;
+  --sidebar-accent-foreground: #0C0F22;
+  --sidebar-border: rgba(13, 16, 40, 0.08);
+  --sidebar-ring: #4B7DE8;
+
+  /* App design tokens — Light (Wise-inspired) */
+  --app-bg: #FFFFFF;
+  --app-card: #FFFFFF;
+  --app-surface: #F0EEE5;
+  --app-surface-raised: #F7F5EC;
+  --app-border: rgba(14, 17, 17, 0.10);
+  --app-border-input: rgba(14, 17, 17, 0.14);
+  --app-text-primary: #0E1111;
+  --app-text-secondary: #3D3D3B;
+  --app-text-muted: #6E6E66;
+  /* Primary action color — Wise navy/forest dark */
+  --app-blue: #163300;
+  --app-blue-bg: rgba(22, 51, 0, 0.06);
+  --app-blue-border: rgba(22, 51, 0, 0.18);
+  --app-blue-glow: rgba(22, 51, 0, 0.25);
+  --app-blue-label: #163300;
+  /* Bright lime/mint — Wise signature */
+  --app-green: #163300;
+  --app-green-bg: #9FE870;
+  --app-green-border: #9FE870;
+  --app-purple: #163300;
+  --app-purple-bg: #DDEED2;
+  --app-purple-border: rgba(22, 51, 0, 0.18);
+  --app-red: #B53020;
+  --app-red-bg: rgba(181, 48, 32, 0.08);
+  --app-red-border: rgba(181, 48, 32, 0.20);
+  --app-yellow: #A56500;
+  --app-yellow-bg: rgba(165, 101, 0, 0.10);
+  --app-orange: #B05030;
+  --app-hero-bg: linear-gradient(135deg, #9FE870 0%, #B6F088 100%);
+  --app-hero-border: rgba(22, 51, 0, 0.12);
+  --app-hero-label: #163300;
+  --app-hero-glow: #9FE870;
+  --app-ai-bg: #E8F5DC;
+  --app-ai-border: rgba(22, 51, 0, 0.16);
+  --app-ai-text: #163300;
+  --app-nav-bg: #FFFFFF;
+  --app-nav-border: rgba(14, 17, 17, 0.08);
+  --app-status-text: #0E1111;
+  --app-status-icon: rgba(14, 17, 17, 0.85);
+  --app-frame-bg: #FFFFFF;
+  --app-frame-shadow: 0 40px 100px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04);
+  --app-outer-bg: #E8E2D8;
+  --app-card-shadow: 0 1px 2px rgba(14,17,17,0.04);
+  --app-usage-heavy-bg: rgba(22, 51, 0, 0.06);
+  --app-usage-heavy-fg: #2F5F1A;
+  --app-usage-moderate-bg: rgba(165, 101, 0, 0.08);
+  --app-usage-moderate-fg: #8A5500;
+  --app-usage-rare-bg: rgba(181, 48, 32, 0.08);
+  --app-usage-rare-fg: #B53020;
+  --app-trial-bg: #F2F8EB;
+  --app-trial-border: rgba(22, 51, 0, 0.18);
+  --app-trial-tag-bg: #163300;
+  --app-trial-tag-fg: #FFFFFF;
+}
+
+.dark {
+  --background: #0B0D18;
+  --foreground: #EDF0FA;
+  --card: #141828;
+  --card-foreground: #EDF0FA;
+  --popover: #141828;
+  --popover-foreground: #EDF0FA;
+  --primary: #5B8DEF;
+  --primary-foreground: #ffffff;
+  --secondary: #1D2236;
+  --secondary-foreground: #A8AECB;
+  --muted: #1D2236;
+  --muted-foreground: #6B728E;
+  --accent: #4FFFB0;
+  --accent-foreground: #0B0D18;
+  --destructive: #FF5A65;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.07);
+  --input-background: #1D2236;
+  --switch-background: #2D3452;
+  --ring: #5B8DEF;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: #5B8DEF;
+  --chart-2: #4FFFB0;
+  --chart-3: #FF7B4F;
+  --chart-4: #C97BFF;
+  --chart-5: #FFD166;
+  --sidebar: #141828;
+  --sidebar-foreground: #EDF0FA;
+  --sidebar-primary: #5B8DEF;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1D2236;
+  --sidebar-accent-foreground: #EDF0FA;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-ring: #5B8DEF;
+
+  /* App design tokens — Dark (Wise-inspired) */
+  --app-bg: #0A1F00;
+  --app-card: #143300;
+  --app-surface: #1C4400;
+  --app-surface-raised: #225200;
+  --app-border: rgba(159, 232, 112, 0.12);
+  --app-border-input: rgba(159, 232, 112, 0.16);
+  --app-text-primary: #F2FFE5;
+  --app-text-secondary: #C8E0B0;
+  --app-text-muted: #8AA77A;
+  --app-blue: #9FE870;
+  --app-blue-bg: rgba(159, 232, 112, 0.12);
+  --app-blue-border: rgba(159, 232, 112, 0.30);
+  --app-blue-glow: rgba(159, 232, 112, 0.35);
+  --app-blue-label: #9FE870;
+  --app-green: #9FE870;
+  --app-green-bg: rgba(159, 232, 112, 0.14);
+  --app-green-border: rgba(159, 232, 112, 0.28);
+  --app-purple: #9FE870;
+  --app-purple-bg: rgba(159, 232, 112, 0.10);
+  --app-purple-border: rgba(159, 232, 112, 0.22);
+  --app-red: #FF8A7A;
+  --app-red-bg: rgba(255, 138, 122, 0.10);
+  --app-red-border: rgba(255, 138, 122, 0.22);
+  --app-yellow: #FFD166;
+  --app-yellow-bg: rgba(255, 209, 102, 0.10);
+  --app-orange: #FF7B4F;
+  --app-hero-bg: linear-gradient(135deg, #9FE870 0%, #B6F088 100%);
+  --app-hero-border: rgba(159, 232, 112, 0.40);
+  --app-hero-label: #0A1F00;
+  --app-hero-glow: #9FE870;
+  --app-ai-bg: #143300;
+  --app-ai-border: rgba(159, 232, 112, 0.30);
+  --app-ai-text: #9FE870;
+  --app-nav-bg: #0A1F00;
+  --app-nav-border: rgba(159, 232, 112, 0.10);
+  --app-status-text: #F2FFE5;
+  --app-status-icon: rgba(242, 255, 229, 0.85);
+  --app-frame-bg: #0A1F00;
+  --app-frame-shadow: 0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(159,232,112,0.10);
+  --app-outer-bg: #061500;
+  --app-card-shadow: none;
+  --app-usage-heavy-bg: rgba(159, 232, 112, 0.10);
+  --app-usage-heavy-fg: #9FE870;
+  --app-usage-moderate-bg: rgba(255, 209, 102, 0.10);
+  --app-usage-moderate-fg: #FFD166;
+  --app-usage-rare-bg: rgba(255, 138, 122, 0.10);
+  --app-usage-rare-fg: #FF8A7A;
+  --app-trial-bg: rgba(159, 232, 112, 0.06);
+  --app-trial-border: rgba(159, 232, 112, 0.30);
+  --app-trial-tag-bg: #9FE870;
+  --app-trial-tag-fg: #0A1F00;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  /**
+  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
+  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
+  */
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}
