@@ -12,8 +12,19 @@ const TASK_TEXT = `You've been meaning to get on top of your subscriptions. Usin
 
 There's no right or wrong answer. Take your time.`;
 
+const AGE_RANGES = ["18–24", "25–34", "35–44", "45–54", "55+"];
+const PROFESSIONS = [
+  "Student",
+  "Designer / Creative",
+  "Engineer / Developer",
+  "Product / Project Manager",
+  "Marketing / Sales",
+  "Finance / Business",
+  "Healthcare",
+  "Education / Teaching",
+  "Other",
+];
 const Q9_OPTIONS = ["Daily", "A few times a week", "Weekly", "Monthly", "Rarely / only when something comes up"];
-
 const LIKERT_LABELS: Record<number, string> = { 1: "Strongly disagree", 3: "Neutral", 5: "Strongly agree" };
 
 function ProgressBar({ step, total }: { step: number; total: number }) {
@@ -57,14 +68,14 @@ function Textarea({ value, onChange, placeholder }: { value: string; onChange: (
   );
 }
 
-function LikertScale({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
+function LikertScale({ value, onChange, id }: { value: number | null; onChange: (v: number) => void; id: string }) {
   return (
     <div style={{ display: "flex", gap: "8px", alignItems: "flex-end" }}>
       {[1, 2, 3, 4, 5].map(n => (
         <label key={n} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", cursor: "pointer", flex: 1 }}>
           <input
             type="radio"
-            name={`likert-${Math.random()}`}
+            name={`likert-${id}`}
             checked={value === n}
             onChange={() => onChange(n)}
             style={{ accentColor: "var(--app-blue)", width: "18px", height: "18px", cursor: "pointer" }}
@@ -91,6 +102,30 @@ function RadioGroup({ options, value, onChange }: { options: string[]; value: st
   );
 }
 
+function PillGroup({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+      {options.map(opt => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onChange(opt)}
+          style={{
+            padding: "8px 18px", borderRadius: "999px",
+            border: `1.5px solid ${value === opt ? "var(--app-blue)" : "var(--app-border)"}`,
+            background: value === opt ? "var(--app-blue)" : "var(--app-surface)",
+            color: value === opt ? "#fff" : "var(--app-text-primary)",
+            fontSize: "13px", fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+            transition: "all 0.15s ease",
+          }}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "16px", padding: "20px 24px", marginBottom: "16px" }}>
@@ -105,10 +140,12 @@ function PrimaryButton({ children, onClick, disabled }: { children: React.ReactN
       onClick={onClick}
       disabled={disabled}
       style={{
-        width: "100%", padding: "14px", borderRadius: "12px", border: "none", cursor: disabled ? "not-allowed" : "pointer",
-        background: disabled ? "var(--app-border)" : "var(--app-blue)", color: "#fff",
+        width: "100%", padding: "14px", borderRadius: "12px", border: "none",
+        cursor: disabled ? "not-allowed" : "pointer",
+        background: disabled ? "var(--app-border)" : "var(--app-blue)",
+        color: disabled ? "var(--app-text-muted)" : "#fff",
         fontSize: "15px", fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-        marginTop: "8px", opacity: disabled ? 0.6 : 1,
+        marginTop: "8px", opacity: disabled ? 0.7 : 1,
       }}
     >
       {children}
@@ -119,6 +156,10 @@ function PrimaryButton({ children, onClick, disabled }: { children: React.ReactN
 export function SurveyApp() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
+  const [ageRange, setAgeRange] = useState("");
+  const [profession, setProfession] = useState("");
+  const [taskStartedAt, setTaskStartedAt] = useState<string | null>(null);
+  const [taskCompletedAt, setTaskCompletedAt] = useState<string | null>(null);
   const [q1, setQ1] = useState("");
   const [q2, setQ2] = useState<number | null>(null);
   const [q3, setQ3] = useState("");
@@ -132,21 +173,31 @@ export function SurveyApp() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const shell: React.CSSProperties = {
-    minHeight: "100vh", background: "var(--app-outer-bg, #F5F5F7)",
-    display: "flex", alignItems: "flex-start", justifyContent: "center",
-    padding: "40px 20px", fontFamily: "'DM Sans', sans-serif",
-  };
+  function startTask() {
+    setTaskStartedAt(new Date().toISOString());
+    setStep(2);
+  }
 
-  const container: React.CSSProperties = {
-    width: "100%", maxWidth: "600px",
-  };
+  function completeTask() {
+    setTaskCompletedAt(new Date().toISOString());
+    setStep(3);
+  }
 
   async function handleSubmit() {
     setSubmitting(true);
     setError("");
     try {
-      await submitResponse({ variant, participant_name: name || null, q1: q1 || null, q2, q3: q3 || null, q4: q4 || null, q5, q6, q7: q7 || null, q8: q8 || null, q9: q9 || null, q10: q10 || null });
+      await submitResponse({
+        variant,
+        participant_name: name || null,
+        age_range: ageRange || null,
+        profession: profession || null,
+        task_started_at: taskStartedAt,
+        task_completed_at: taskCompletedAt,
+        survey_completed_at: new Date().toISOString(),
+        q1: q1 || null, q2, q3: q3 || null, q4: q4 || null, q5, q6,
+        q7: q7 || null, q8: q8 || null, q9: q9 || null, q10: q10 || null,
+      });
       setStep(4);
     } catch {
       setError("Submission failed — please check your connection and try again.");
@@ -155,10 +206,67 @@ export function SurveyApp() {
     }
   }
 
+  // Step 2: full-screen two-panel layout
+  if (step === 2) {
+    return (
+      <div style={{ display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif" }}>
+        {/* Left: task panel */}
+        <div style={{ width: "380px", flexShrink: 0, display: "flex", flexDirection: "column", borderRight: "1px solid var(--app-border)", background: "var(--app-card)", padding: "32px 28px" }}>
+          <div style={{ marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px" }}>
+              <div style={{ height: "4px", flex: 1, background: "var(--app-border)", borderRadius: "2px" }}>
+                <div style={{ height: "100%", width: "50%", background: "var(--app-blue)", borderRadius: "2px" }} />
+              </div>
+              <span style={{ fontSize: "11px", color: "var(--app-text-muted)", whiteSpace: "nowrap" }}>Step 2 of 4</span>
+            </div>
+            <span style={{ fontSize: "11px", color: "var(--app-blue)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Version {variant.toUpperCase()}
+            </span>
+            <h1 style={{ fontSize: "20px", fontWeight: 700, color: "var(--app-text-primary)", margin: "6px 0 4px" }}>
+              Complete the task
+            </h1>
+            <p style={{ fontSize: "13px", color: "var(--app-text-muted)", margin: 0 }}>
+              Use the prototype on the right. Come back here when done.
+            </p>
+          </div>
+
+          <div style={{ background: "var(--app-surface)", borderRadius: "12px", padding: "18px 20px", flex: 1, overflowY: "auto" }}>
+            <p style={{ fontSize: "14px", color: "var(--app-text-primary)", lineHeight: 1.75, whiteSpace: "pre-line", margin: 0 }}>
+              {TASK_TEXT}
+            </p>
+          </div>
+
+          <button
+            onClick={completeTask}
+            style={{
+              marginTop: "20px", padding: "14px 20px", borderRadius: "12px", border: "none",
+              background: "var(--app-blue)", color: "#fff", fontSize: "15px", fontWeight: 600,
+              cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            I've completed the task →
+          </button>
+        </div>
+
+        {/* Right: prototype iframe */}
+        <div style={{ flex: 1, overflow: "hidden", background: "var(--app-outer-bg, #F5F5F7)" }}>
+          <iframe src={prototypeUrl} style={{ width: "100%", height: "100%", border: "none" }} title="Prototype" />
+        </div>
+      </div>
+    );
+  }
+
+  const shell: React.CSSProperties = {
+    minHeight: "100vh", background: "var(--app-outer-bg, #F5F5F7)",
+    display: "flex", alignItems: "flex-start", justifyContent: "center",
+    padding: "40px 20px", fontFamily: "'DM Sans', sans-serif",
+  };
+  const container: React.CSSProperties = { width: "100%", maxWidth: "600px" };
+
   return (
     <div style={shell}>
       <div style={container}>
-        <ProgressBar step={step} total={4} />
+        <ProgressBar step={step === 3 ? 3 : step === 4 ? 4 : 1} total={4} />
 
         {step === 1 && (
           <>
@@ -171,6 +279,7 @@ export function SurveyApp() {
             <p style={{ fontSize: "15px", color: "var(--app-text-secondary)", marginBottom: "32px", lineHeight: 1.5 }}>
               This takes about 10 minutes. You'll use a prototype app, then answer a few short questions.
             </p>
+
             <Card>
               <Label>What's your name or nickname?</Label>
               <input
@@ -185,40 +294,19 @@ export function SurveyApp() {
                 }}
               />
             </Card>
-            <PrimaryButton onClick={() => setStep(2)} disabled={!name.trim()}>
-              Start →
-            </PrimaryButton>
-          </>
-        )}
 
-        {step === 2 && (
-          <>
-            <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--app-text-primary)", marginBottom: "8px" }}>
-              Your task
-            </h1>
-            <p style={{ fontSize: "13px", color: "var(--app-text-muted)", marginBottom: "20px" }}>
-              Read the task below, then open the prototype in a new tab to complete it.
-            </p>
             <Card>
-              <p style={{ fontSize: "15px", color: "var(--app-text-primary)", lineHeight: 1.6, whiteSpace: "pre-line" }}>
-                {TASK_TEXT}
-              </p>
+              <Label>What's your age range?</Label>
+              <PillGroup options={AGE_RANGES} value={ageRange} onChange={setAgeRange} />
             </Card>
-            <a
-              href={prototypeUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "block", width: "100%", padding: "14px", borderRadius: "12px",
-                background: "var(--app-blue)", color: "#fff", textAlign: "center",
-                fontSize: "15px", fontWeight: 600, textDecoration: "none", boxSizing: "border-box",
-                marginBottom: "12px", marginTop: "8px",
-              }}
-            >
-              Open prototype →
-            </a>
-            <PrimaryButton onClick={() => setStep(3)}>
-              I've completed the task
+
+            <Card>
+              <Label>What best describes your profession?</Label>
+              <RadioGroup options={PROFESSIONS} value={profession} onChange={setProfession} />
+            </Card>
+
+            <PrimaryButton onClick={startTask} disabled={!name.trim() || !ageRange || !profession}>
+              Start →
             </PrimaryButton>
           </>
         )}
@@ -240,7 +328,7 @@ export function SurveyApp() {
             <Card>
               <Label>Q2 — How confident are you that you found all the information you needed?</Label>
               <Hint>1 = Not confident at all · 5 = Completely confident</Hint>
-              <LikertScale value={q2} onChange={setQ2} />
+              <LikertScale id="q2" value={q2} onChange={setQ2} />
             </Card>
 
             <Card>
@@ -256,13 +344,13 @@ export function SurveyApp() {
             <Card>
               <Label>Q5 — I found this app easy to navigate.</Label>
               <Hint>1 = Strongly disagree · 5 = Strongly agree</Hint>
-              <LikertScale value={q5} onChange={setQ5} />
+              <LikertScale id="q5" value={q5} onChange={setQ5} />
             </Card>
 
             <Card>
               <Label>Q6 — I would need to spend time learning this app before feeling confident.</Label>
               <Hint>1 = Strongly disagree · 5 = Strongly agree</Hint>
-              <LikertScale value={q6} onChange={setQ6} />
+              <LikertScale id="q6" value={q6} onChange={setQ6} />
             </Card>
 
             <Card>

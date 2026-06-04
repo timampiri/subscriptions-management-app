@@ -12,6 +12,11 @@ export interface Response {
   created_at: string;
   variant: string;
   participant_name: string | null;
+  age_range: string | null;
+  profession: string | null;
+  task_started_at: string | null;
+  task_completed_at: string | null;
+  survey_completed_at: string | null;
   q1: string | null;
   q2: number | null;
   q3: string | null;
