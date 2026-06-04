@@ -4,13 +4,11 @@ import { submitResponse } from "../lib/supabase";
 const variant = new URLSearchParams(window.location.search).get("v") ?? "a";
 const prototypeUrl = `${window.location.origin}/?v=${variant}`;
 
-const TASK_TEXT = `You've been meaning to get on top of your subscriptions. Using this app:
-
-1. Find out how much you're spending per month.
-2. Identify which subscriptions you use the least.
-3. Decide what you want to do with one of them — cancel, pause, or keep it — and take that action in the app.
-
-There's no right or wrong answer. Take your time.`;
+const TASKS = [
+  { text: "Find out how much you're spending per month and what category you spend the most money on." },
+  { text: "Identify which subscriptions you use the least and cancel one of them." },
+  { text: "Add a new auto-tracked subscription by connecting your Gmail account, then add all subscriptions to track." },
+];
 
 const AGE_RANGES = ["18–24", "25–34", "35–44", "45–54", "55+"];
 const PROFESSIONS = [
@@ -176,6 +174,8 @@ function PrimaryButton({ children, onClick, disabled }: { children: React.ReactN
 
 export function SurveyApp() {
   const [step, setStep] = useState(1);
+  const [taskIndex, setTaskIndex] = useState(0);
+  const [taskResults, setTaskResults] = useState<string[]>([]);
 
   // Demographics
   const [name, setName] = useState("");
@@ -187,14 +187,14 @@ export function SurveyApp() {
   const [taskCompletedAt, setTaskCompletedAt] = useState<string | null>(null);
 
   // Questions
-  const [q1, setQ1] = useState("");          // Learnability
-  const [q2, setQ2] = useState("");          // Navigation clarity
-  const [q3, setQ3] = useState("");          // First impression
-  const [q4Choice, setQ4Choice] = useState(""); // "Yes" | "No"
-  const [q4Detail, setQ4Detail] = useState(""); // conditional text
-  const [q5, setQ5] = useState("");          // Unmet expectations
-  const [q6, setQ6] = useState("");          // Desired features
-  const [q7, setQ7] = useState("");          // Usage intent
+  const [q1, setQ1] = useState("");
+  const [q2, setQ2] = useState("");
+  const [q3, setQ3] = useState("");
+  const [q4Choice, setQ4Choice] = useState("");
+  const [q4Detail, setQ4Detail] = useState("");
+  const [q5, setQ5] = useState("");
+  const [q6, setQ6] = useState("");
+  const [q7, setQ7] = useState("");
   const [nps, setNps] = useState<number | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -205,9 +205,15 @@ export function SurveyApp() {
     setStep(2);
   }
 
-  function completeTask() {
-    setTaskCompletedAt(new Date().toISOString());
-    setStep(3);
+  function handleTaskDone(result: "completed" | "failed") {
+    const updated = [...taskResults, result];
+    setTaskResults(updated);
+    if (taskIndex < TASKS.length - 1) {
+      setTaskIndex(taskIndex + 1);
+    } else {
+      setTaskCompletedAt(new Date().toISOString());
+      setStep(3);
+    }
   }
 
   async function handleSubmit() {
@@ -230,9 +236,9 @@ export function SurveyApp() {
         q5: q5 || null,
         q6: q6 || null,
         q7: q7 || null,
-        q8: null,
-        q9: null,
-        q10: null,
+        q8: taskResults[0] ?? null,
+        q9: taskResults[1] ?? null,
+        q10: taskResults[2] ?? null,
         nps,
       });
       setStep(4);
@@ -246,6 +252,10 @@ export function SurveyApp() {
   // ── Two-panel layout (steps 2 and 3) ──────────────────────────────────────
 
   if (step === 2 || step === 3) {
+    const progressWidth = step === 2
+      ? `${25 + ((taskIndex + 1) / TASKS.length) * 37}%`
+      : "75%";
+
     return (
       <div style={{ display: "flex", height: "100vh", overflow: "hidden", fontFamily: "'DM Sans', sans-serif" }}>
         {/* Left panel */}
@@ -255,7 +265,7 @@ export function SurveyApp() {
           <div style={{ padding: "24px 28px 16px", flexShrink: 0, borderBottom: "1px solid var(--app-border)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
               <div style={{ height: "4px", flex: 1, background: "var(--app-border)", borderRadius: "2px" }}>
-                <div style={{ height: "100%", width: step === 2 ? "50%" : "75%", background: "var(--app-blue)", borderRadius: "2px", transition: "width 0.3s ease" }} />
+                <div style={{ height: "100%", width: progressWidth, background: "var(--app-blue)", borderRadius: "2px", transition: "width 0.3s ease" }} />
               </div>
               <span style={{ fontSize: "11px", color: "var(--app-text-muted)", whiteSpace: "nowrap" }}>
                 Step {step} of 4
@@ -265,7 +275,7 @@ export function SurveyApp() {
               Version {variant.toUpperCase()}
             </span>
             <h1 style={{ fontSize: "18px", fontWeight: 700, color: "var(--app-text-primary)", margin: "4px 0 2px" }}>
-              {step === 2 ? "Complete the task" : "Quick questions"}
+              {step === 2 ? `Task ${taskIndex + 1} of ${TASKS.length}` : "Quick questions"}
             </h1>
             <p style={{ fontSize: "12px", color: "var(--app-text-muted)", margin: 0 }}>
               {step === 2
@@ -279,20 +289,51 @@ export function SurveyApp() {
 
             {step === 2 && (
               <>
-                <div style={{ background: "var(--app-surface)", borderRadius: "12px", padding: "16px 18px", marginBottom: "20px" }}>
-                  <p style={{ fontSize: "14px", color: "var(--app-text-primary)", lineHeight: 1.75, whiteSpace: "pre-line", margin: 0 }}>
-                    {TASK_TEXT}
+                {/* Prototype disclaimer */}
+                <div style={{
+                  background: "var(--app-surface)", borderRadius: "10px",
+                  padding: "10px 14px", marginBottom: "16px",
+                  borderLeft: "3px solid var(--app-orange, #F59E0B)",
+                  border: "1px solid var(--app-border)",
+                }}>
+                  <p style={{ fontSize: "12px", color: "var(--app-text-muted)", margin: 0, lineHeight: 1.5 }}>
+                    ⚠️ This is a prototype — some features may not be fully functional yet.
                   </p>
                 </div>
+
+                {/* Task text */}
+                <div style={{ background: "var(--app-surface)", borderRadius: "12px", padding: "16px 18px", marginBottom: "12px" }}>
+                  <p style={{ fontSize: "14px", color: "var(--app-text-primary)", lineHeight: 1.75, margin: 0 }}>
+                    {TASKS[taskIndex].text}
+                  </p>
+                </div>
+
+                <p style={{ fontSize: "12px", color: "var(--app-text-muted)", marginBottom: "20px", lineHeight: 1.4 }}>
+                  There's no right or wrong answer. Take your time.
+                </p>
+
                 <button
-                  onClick={completeTask}
+                  onClick={() => handleTaskDone("completed")}
                   style={{
                     width: "100%", padding: "14px", borderRadius: "12px", border: "none",
                     background: "var(--app-blue)", color: "#fff", fontSize: "15px", fontWeight: 600,
-                    cursor: "pointer", fontFamily: "'DM Sans', sans-serif",
+                    cursor: "pointer", fontFamily: "'DM Sans', sans-serif", marginBottom: "8px",
+                    display: "block",
                   }}
                 >
-                  I've completed the task →
+                  {taskIndex < TASKS.length - 1 ? "Task completed → Next task" : "Task completed → Questions"}
+                </button>
+
+                <button
+                  onClick={() => handleTaskDone("failed")}
+                  style={{
+                    width: "100%", padding: "12px", borderRadius: "12px",
+                    border: "1px solid var(--app-border)", background: "transparent",
+                    color: "var(--app-text-secondary)", fontSize: "14px", fontWeight: 500,
+                    cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "block",
+                  }}
+                >
+                  Couldn't complete · Skip to {taskIndex < TASKS.length - 1 ? "next task" : "questions"}
                 </button>
               </>
             )}
@@ -397,7 +438,6 @@ export function SurveyApp() {
   return (
     <div style={shell}>
       <div style={container}>
-        {/* Progress bar only on step 1 */}
         {step === 1 && (
           <div style={{ width: "100%", height: "4px", background: "var(--app-border)", borderRadius: "2px", marginBottom: "32px" }}>
             <div style={{ height: "100%", width: "25%", background: "var(--app-blue)", borderRadius: "2px" }} />
