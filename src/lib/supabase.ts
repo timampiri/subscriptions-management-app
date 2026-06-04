@@ -17,16 +17,17 @@ export interface Response {
   task_started_at: string | null;
   task_completed_at: string | null;
   survey_completed_at: string | null;
-  q1: string | null;
-  q2: number | null;
-  q3: string | null;
-  q4: string | null;
-  q5: number | null;
-  q6: number | null;
-  q7: string | null;
-  q8: string | null;
-  q9: string | null;
-  q10: string | null;
+  q1: string | null;   // Learnability choice
+  q2: string | null;   // Navigation clarity text
+  q3: string | null;   // First impression text
+  q4: string | null;   // Feature discoverability ("No" | description text)
+  q5: string | null;   // Unmet expectations text
+  q6: string | null;   // Desired features text
+  q7: string | null;   // Usage intent choice
+  q8: string | null;   // unused (old schema)
+  q9: string | null;   // unused (old schema)
+  q10: string | null;  // unused (old schema)
+  nps: number | null;  // 0–10 recommendation likelihood
 }
 
 export async function submitResponse(data: Omit<Response, "id" | "created_at">): Promise<void> {
@@ -42,4 +43,12 @@ export async function fetchResponses(): Promise<Response[]> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/responses?order=created_at.asc`, { headers });
   if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
   return res.json();
+}
+
+export async function deleteResponse(id: string): Promise<void> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/responses?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) throw new Error(`Delete failed: ${res.status}`);
 }
