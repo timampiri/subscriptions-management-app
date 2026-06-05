@@ -6,6 +6,14 @@ import { SubscriptionCard } from "./SubscriptionCard";
 const SOURCES = ["All", "Auto-detected", "Manual"] as const;
 type SourceKey = (typeof SOURCES)[number];
 
+type StatusTab = "active" | "trials" | "upcoming" | "cancelled";
+const STATUS_TABS: { key: StatusTab; label: string }[] = [
+  { key: "active",    label: "Active" },
+  { key: "trials",    label: "Free Trials" },
+  { key: "upcoming",  label: "Upcoming" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
 const SORT_OPTIONS = [
   { key: "default",   label: "Default" },
   { key: "cost-desc", label: "Price: high → low" },
@@ -220,31 +228,51 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
   const [accounts, setAccounts] = useState<Set<string>>(new Set());
   const [usage, setUsage] = useState<UsageKey>((initialUsageFilter as UsageKey) ?? "All");
   const [sort, setSort] = useState<SortKey>("default");
+  const [statusTab, setStatusTab] = useState<StatusTab>("active");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => { onFilterOpenChange?.(filterOpen); }, [filterOpen, onFilterOpenChange]);
 
   const activeFilterCount = (sort !== "default" ? 1 : 0) + (categories.size > 0 ? 1 : 0) + (source !== "All" ? 1 : 0) + (usage !== "All" ? 1 : 0);
 
-  const history = useMemo(() => SUBSCRIPTIONS.filter(s => s.status === "cancelled"), []);
+  const tabCounts = useMemo(() => {
+    const now = Date.now();
+    return {
+      active:    SUBSCRIPTIONS.filter(s => s.status === "active" || s.status === "paused").length,
+      trials:    SUBSCRIPTIONS.filter(s => s.status === "trial").length,
+      upcoming:  SUBSCRIPTIONS.filter(s => {
+        const diff = Math.ceil((new Date(s.nextRenewal).getTime() - now) / 86400000);
+        return (s.status === "active" || s.status === "trial") && diff >= 0 && diff <= 7;
+      }).length,
+      cancelled: SUBSCRIPTIONS.filter(s => s.status === "cancelled").length,
+    };
+  }, []);
 
-  const filtered = useMemo(() => SUBSCRIPTIONS.filter(s => s.status !== "cancelled").filter(s => {
-    const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
-    const matchCat = categories.size === 0 || categories.has(s.category);
-    let matchSrc = true;
-    if (source === "Manual") {
-      matchSrc = s.source === "manual";
-    } else if (source === "Auto-detected") {
-      if (s.source === "manual") matchSrc = false;
-      else if (accounts.size > 0) matchSrc = Array.from(accounts).some(acc => subMatchesLinkedAccount(s.account, acc));
-    }
-    let matchUsage = true;
-    if (usage === "Heavy use") matchUsage = s.usageScore >= 75;
-    else if (usage === "Moderate use") matchUsage = s.usageScore >= 40 && s.usageScore < 75;
-    else if (usage === "Rarely used") matchUsage = s.usageScore < 40;
-    return matchSearch && matchCat && matchSrc && matchUsage;
-  }), [search, categories, source, accounts, usage]);
+  const filtered = useMemo(() => {
+    const base = statusTab === "active"   ? SUBSCRIPTIONS.filter(s => s.status === "active" || s.status === "paused")
+               : statusTab === "trials"   ? SUBSCRIPTIONS.filter(s => s.status === "trial")
+               : statusTab === "upcoming" ? SUBSCRIPTIONS.filter(s => {
+                   const diff = Math.ceil((new Date(s.nextRenewal).getTime() - Date.now()) / 86400000);
+                   return (s.status === "active" || s.status === "trial") && diff >= 0 && diff <= 7;
+                 })
+               : SUBSCRIPTIONS.filter(s => s.status === "cancelled");
+    return base.filter(s => {
+      const matchSearch = s.name.toLowerCase().includes(search.toLowerCase());
+      const matchCat = categories.size === 0 || categories.has(s.category);
+      let matchSrc = true;
+      if (source === "Manual") {
+        matchSrc = s.source === "manual";
+      } else if (source === "Auto-detected") {
+        if (s.source === "manual") matchSrc = false;
+        else if (accounts.size > 0) matchSrc = Array.from(accounts).some(acc => subMatchesLinkedAccount(s.account, acc));
+      }
+      let matchUsage = true;
+      if (usage === "Heavy use") matchUsage = s.usageScore >= 75;
+      else if (usage === "Moderate use") matchUsage = s.usageScore >= 40 && s.usageScore < 75;
+      else if (usage === "Rarely used") matchUsage = s.usageScore < 40;
+      return matchSearch && matchCat && matchSrc && matchUsage;
+    });
+  }, [statusTab, search, categories, source, accounts, usage]);
 
   const sorted = useMemo(() => {
     if (sort === "cost-desc") return [...filtered].sort((a, b) => b.amount - a.amount);
@@ -283,17 +311,7 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
           )}
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "14px", marginBottom: "12px", background: "var(--app-surface)" }}>
-          <Search size={15} color="var(--app-text-muted)" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search subscriptions…"
-            style={{ flex: 1, background: "transparent", outline: "none", border: "none", fontSize: "14px", color: "var(--app-text-primary)", fontFamily: "'DM Sans', sans-serif" }}
-          />
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
           <div style={{ display: "flex", borderRadius: "14px", overflow: "hidden", background: "var(--app-surface)", padding: "3px" }}>
             {(["list", "calendar"] as const).map(v => (
               <button
@@ -333,6 +351,47 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
               </span>
             )}
           </button>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "14px", marginBottom: "12px", background: "var(--app-surface)" }}>
+          <Search size={15} color="var(--app-text-muted)" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search subscriptions…"
+            style={{ flex: 1, background: "transparent", outline: "none", border: "none", fontSize: "14px", color: "var(--app-text-primary)", fontFamily: "'DM Sans', sans-serif" }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto", scrollbarWidth: "none", paddingBottom: "4px" }}>
+          {STATUS_TABS.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setStatusTab(key)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                padding: "6px 12px", borderRadius: "999px", flexShrink: 0,
+                cursor: "pointer",
+                background: statusTab === key ? "var(--app-blue)" : "var(--app-surface)",
+                color: statusTab === key ? "#fff" : "var(--app-text-secondary)",
+                border: "1px solid",
+                borderColor: statusTab === key ? "var(--app-blue)" : "var(--app-border)",
+                fontSize: "12px", fontWeight: statusTab === key ? 600 : 500,
+                transition: "all 0.15s ease",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {label}
+              <span style={{
+                padding: "1px 5px", borderRadius: "999px",
+                background: statusTab === key ? "rgba(255,255,255,0.25)" : "var(--app-border)",
+                color: statusTab === key ? "#fff" : "var(--app-text-muted)",
+                fontSize: "10px", fontWeight: 700, fontFamily: "'DM Mono', monospace",
+              }}>
+                {tabCounts[key]}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -389,42 +448,12 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {subs.map(sub => (
-                    <SubscriptionCard key={sub.id} sub={sub} onClick={() => onSelect(sub.id)} />
+                    <SubscriptionCard key={sub.id} sub={sub} onClick={() => onSelect(sub.id)} variant={statusTab === "cancelled" ? "history" : undefined} />
                   ))}
                 </div>
               </div>
             ))}
 
-            {/* History */}
-            {history.length > 0 && (
-              <div style={{ marginTop: "8px" }}>
-                <button
-                  onClick={() => setShowHistory(v => !v)}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    width: "100%", padding: "12px 0", marginBottom: "8px",
-                    background: "transparent", border: "none", borderTop: "1px solid var(--app-border)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <span style={{ fontSize: "11px", color: "var(--app-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                    History · {history.length}
-                  </span>
-                  <ChevronRight
-                    size={16}
-                    color="var(--app-text-muted)"
-                    style={{ transform: showHistory ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.15s ease" }}
-                  />
-                </button>
-                {showHistory && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-                    {history.map(sub => (
-                      <SubscriptionCard key={sub.id} sub={sub} onClick={() => onSelect(sub.id)} variant="history" />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         ) : (
           <CalendarView subs={SUBSCRIPTIONS.filter(s => s.status !== "cancelled")} onSelect={onSelect} />
