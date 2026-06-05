@@ -33,6 +33,37 @@ function timeBucket(ms: number): string {
   return ">5m";
 }
 
+const TASK_LABELS = [
+  "Task 1 — Find monthly spend & top category",
+  "Task 2 — Cancel underused subscription",
+  "Task 3 — Connect Gmail & add subscriptions",
+];
+const TASK_RESULT_KEYS: Array<"q8" | "q9" | "q10"> = ["q8", "q9", "q10"];
+const TASK_START_KEYS: Array<keyof Response> = ["task1_started_at", "task2_started_at", "task3_started_at"];
+const TASK_END_KEYS: Array<keyof Response> = ["task1_ended_at", "task2_ended_at", "task3_ended_at"];
+
+function perTaskDurationMs(r: Response, i: number): number | null {
+  const s = r[TASK_START_KEYS[i]] as string | null;
+  const e = r[TASK_END_KEYS[i]] as string | null;
+  if (!s || !e) return null;
+  return new Date(e).getTime() - new Date(s).getTime();
+}
+
+function taskStats(rows: Response[], i: number) {
+  const key = TASK_RESULT_KEYS[i];
+  const attempted = rows.filter(r => r[key] !== null);
+  const completed = attempted.filter(r => r[key] === "completed");
+  const durations = attempted.map(r => perTaskDurationMs(r, i)).filter((d): d is number => d !== null);
+  const avgDur = durations.length
+    ? formatDuration(durations.reduce((a, b) => a + b, 0) / durations.length)
+    : "—";
+  return {
+    rate: attempted.length ? `${completed.length}/${attempted.length}` : "—",
+    avgDur,
+    n: attempted.length,
+  };
+}
+
 const AGE_RANGE_KEYS = ["18–24", "25–34", "35–44", "45–54", "55+"];
 const PROFESSION_KEYS = [
   "Student", "Designer / Creative", "Engineer / Developer",
@@ -220,13 +251,13 @@ function UserDetail({
   return (
     <div style={{ padding: "20px 18px", background: "var(--app-surface)" }}>
       {/* Participant summary */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "18px", padding: "12px 14px", background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "10px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "14px", padding: "12px 14px", background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "10px" }}>
         {[
           ["Name", r.participant_name ?? "—"],
           ["Version", r.variant.toUpperCase()],
           ["Age", r.age_range ?? "—"],
           ["Profession", r.profession ?? "—"],
-          ["Task time", dur !== null ? formatDuration(dur) : "—"],
+          ["Total task time", dur !== null ? formatDuration(dur) : "—"],
           ["Submitted", fmtTime(r.created_at)],
         ].map(([label, val]) => (
           <div key={label}>
@@ -234,6 +265,28 @@ function UserDetail({
             <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-primary)" }}>{val}</p>
           </div>
         ))}
+      </div>
+
+      {/* Per-task breakdown */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "14px" }}>
+        {TASK_LABELS.map((label, i) => {
+          const result = r[TASK_RESULT_KEYS[i]];
+          const ms = perTaskDurationMs(r, i);
+          const resultColor = result === "completed" ? "#059669" : result === "failed" ? "#EF4444" : "var(--app-text-muted)";
+          return (
+            <div key={i} style={{ background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "10px", padding: "10px 12px" }}>
+              <p style={{ fontSize: "10px", fontWeight: 600, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+                Task {i + 1}
+              </p>
+              <p style={{ fontSize: "13px", fontWeight: 700, color: resultColor, marginBottom: "2px", textTransform: "capitalize" }}>
+                {result ?? "—"}
+              </p>
+              <p style={{ fontSize: "11px", color: "var(--app-text-muted)", fontFamily: "'DM Mono', monospace" }}>
+                {ms !== null ? formatDuration(ms) : "—"}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {/* All Q&A */}
@@ -377,6 +430,35 @@ export function ResultsApp() {
               <StatCard label="Avg task time A" value={meanDuration(a)} sub={`${a.filter(r => r.task_started_at && r.task_completed_at).length} timed`} />
               <StatCard label="Avg task time B" value={meanDuration(b)} sub={`${b.filter(r => r.task_started_at && r.task_completed_at).length} timed`} />
             </div>
+
+            {/* ── Task completion ── */}
+            {rows.length > 0 && (
+              <>
+                <h2 style={sectionTitle}>Task completion</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "32px" }}>
+                  {TASK_LABELS.map((label, i) => {
+                    const sA = taskStats(a, i);
+                    const sB = taskStats(b, i);
+                    return (
+                      <div key={i} style={card}>
+                        <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px" }}>{label}</p>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                          {([["a", sA, "#1D4ED8"], ["b", sB, "#7C3AED"]] as const).map(([ver, s, col]) => (
+                            <div key={ver}>
+                              <p style={{ fontSize: "11px", fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>Version {ver.toUpperCase()}</p>
+                              <p style={{ fontSize: "26px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{s.rate}</p>
+                              <p style={{ fontSize: "11px", color: "var(--app-text-muted)", marginTop: "4px" }}>
+                                completed{s.n > 0 ? ` · avg ${s.avgDur}` : ""}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
 
             {/* ── NPS ── */}
             {rows.length > 0 && (

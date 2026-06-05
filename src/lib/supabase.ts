@@ -17,6 +17,12 @@ export interface Response {
   task_started_at: string | null;
   task_completed_at: string | null;
   survey_completed_at: string | null;
+  task1_started_at: string | null;
+  task1_ended_at: string | null;
+  task2_started_at: string | null;
+  task2_ended_at: string | null;
+  task3_started_at: string | null;
+  task3_ended_at: string | null;
   q1: string | null;   // Learnability choice
   q2: string | null;   // Navigation clarity text
   q3: string | null;   // First impression text
@@ -24,9 +30,9 @@ export interface Response {
   q5: string | null;   // Unmet expectations text
   q6: string | null;   // Desired features text
   q7: string | null;   // Usage intent choice
-  q8: string | null;   // unused (old schema)
-  q9: string | null;   // unused (old schema)
-  q10: string | null;  // unused (old schema)
+  q8: string | null;   // Task 1 result ("completed" | "failed")
+  q9: string | null;   // Task 2 result ("completed" | "failed")
+  q10: string | null;  // Task 3 result ("completed" | "failed")
   nps: number | null;  // 0–10 recommendation likelihood
 }
 

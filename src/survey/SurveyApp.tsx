@@ -182,9 +182,9 @@ export function SurveyApp() {
   const [ageRange, setAgeRange] = useState("");
   const [profession, setProfession] = useState("");
 
-  // Timing
-  const [taskStartedAt, setTaskStartedAt] = useState<string | null>(null);
-  const [taskCompletedAt, setTaskCompletedAt] = useState<string | null>(null);
+  // Per-task timing — parallel arrays indexed by task number
+  const [taskStartTimes, setTaskStartTimes] = useState<string[]>([]);
+  const [taskEndTimes, setTaskEndTimes] = useState<string[]>([]);
 
   // Questions
   const [q1, setQ1] = useState("");
@@ -201,17 +201,18 @@ export function SurveyApp() {
   const [error, setError] = useState("");
 
   function startTask() {
-    setTaskStartedAt(new Date().toISOString());
+    setTaskStartTimes([new Date().toISOString()]);
     setStep(2);
   }
 
   function handleTaskDone(result: "completed" | "failed") {
-    const updated = [...taskResults, result];
-    setTaskResults(updated);
+    const now = new Date().toISOString();
+    setTaskResults(prev => [...prev, result]);
+    setTaskEndTimes(prev => [...prev, now]);
     if (taskIndex < TASKS.length - 1) {
+      setTaskStartTimes(prev => [...prev, now]);
       setTaskIndex(taskIndex + 1);
     } else {
-      setTaskCompletedAt(new Date().toISOString());
       setStep(3);
     }
   }
@@ -226,9 +227,15 @@ export function SurveyApp() {
         participant_name: name || null,
         age_range: ageRange || null,
         profession: profession || null,
-        task_started_at: taskStartedAt,
-        task_completed_at: taskCompletedAt,
+        task_started_at: taskStartTimes[0] ?? null,
+        task_completed_at: taskEndTimes[TASKS.length - 1] ?? null,
         survey_completed_at: new Date().toISOString(),
+        task1_started_at: taskStartTimes[0] ?? null,
+        task1_ended_at: taskEndTimes[0] ?? null,
+        task2_started_at: taskStartTimes[1] ?? null,
+        task2_ended_at: taskEndTimes[1] ?? null,
+        task3_started_at: taskStartTimes[2] ?? null,
+        task3_ended_at: taskEndTimes[2] ?? null,
         q1: q1 || null,
         q2: q2 || null,
         q3: q3 || null,
