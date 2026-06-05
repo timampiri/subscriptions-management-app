@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, X, Shield, Bell, Info, CheckCircle, ChevronDown, ChevronRight, Filter, Search as SearchIcon, Sparkles, Calendar, RefreshCw, Mail as MailIcon, Tag, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, X, Shield, Bell, Info, CheckCircle, ChevronRight, Filter, Search as SearchIcon, Sparkles, Calendar, RefreshCw, Mail as MailIcon, Tag, Pencil, Trash2 } from "lucide-react";
 import { DETECTED_SUBSCRIPTIONS, DetectedSubscription } from "./data";
 import { SubscriptionEditForm } from "./SubscriptionEditForm";
 
@@ -327,7 +327,6 @@ function ResultsStep({
   onClose?: () => void;
 }) {
   const [sort, setSort] = useState<SortKey>("cost");
-  const [sortOpen, setSortOpen] = useState(false);
   const [filters, setFilters] = useState<Set<FilterKey>>(new Set());
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -488,42 +487,6 @@ function ResultsStep({
           >
             {selectMode ? "Cancel" : "Select"}
           </button>
-
-          {/* Sort dropdown */}
-          <div style={{ position: "relative" }}>
-            <button onClick={() => setSortOpen(v => !v)} style={{
-              display: "flex", alignItems: "center", gap: "4px",
-              padding: "6px 10px", borderRadius: "999px",
-              background: "var(--app-card)", border: "1px solid var(--app-border)",
-              fontSize: "12px", fontWeight: 500, color: "var(--app-text-primary)",
-              cursor: "pointer",
-            }}>
-              Sort: {sortLabels[sort]} <ChevronDown size={12} />
-            </button>
-            {sortOpen && (
-              <>
-                <div onClick={() => setSortOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 1 }} />
-                <div style={{
-                  position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 2,
-                  minWidth: "160px", padding: "4px",
-                  background: "var(--app-card)", border: "1px solid var(--app-border)",
-                  borderRadius: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                }}>
-                  {(Object.keys(sortLabels) as SortKey[]).map(k => (
-                    <button key={k} onClick={() => { setSort(k); setSortOpen(false); }} style={{
-                      display: "block", width: "100%", textAlign: "left",
-                      padding: "8px 10px", borderRadius: "8px", border: "none",
-                      background: sort === k ? "var(--app-surface)" : "transparent",
-                      fontSize: "12px", color: "var(--app-text-primary)", cursor: "pointer",
-                      fontFamily: T.ff,
-                    }}>
-                      {sortLabels[k]}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
 
           {/* Filter icon — RIGHT */}
           {activeTab === "detected" && (
@@ -819,14 +782,42 @@ function ResultsStep({
         </Popover>
       )}
 
-      {/* Filter popover */}
+      {/* Sort & Filter popover */}
       {filterOpen && (
         <Popover onClose={() => setFilterOpen(false)}>
-          <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--app-text-primary)", marginBottom: "12px" }}>Filter</p>
+          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>Sort</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
+            {(Object.keys(sortLabels) as SortKey[]).map(k => {
+              const active = sort === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setSort(k)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "12px 14px", borderRadius: "12px", border: "none",
+                    background: active ? "var(--app-blue-bg)" : "var(--app-surface)",
+                    cursor: "pointer", textAlign: "left", fontFamily: T.ff,
+                  }}
+                >
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: active ? "var(--app-blue-label)" : "var(--app-text-primary)" }}>{sortLabels[k]}</p>
+                  <div style={{
+                    width: "20px", height: "20px", borderRadius: "50%", flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: active ? "var(--app-blue)" : "transparent",
+                    border: `2px solid ${active ? "var(--app-blue)" : "var(--app-border)"}`,
+                  }}>
+                    {active && <Check size={11} color="#fff" strokeWidth={3} />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <p style={{ fontSize: "11px", fontWeight: 600, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>Filter</p>
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {([
               { key: "highConfidence" as FilterKey, label: "High confidence", sub: "80%+ match score" },
-              { key: "newToApp" as FilterKey, label: "New to app", sub: "Not already tracked" },
               { key: "alreadyAdded" as FilterKey, label: "Already added", sub: "Tracked in this session" },
             ] as const).map(f => {
               const on = filters.has(f.key);
@@ -867,7 +858,7 @@ function ResultsStep({
                 cursor: "pointer", fontFamily: T.ff,
               }}
             >
-              Clear all filters
+              Clear filters
             </button>
           )}
         </Popover>
@@ -883,7 +874,6 @@ function ResultsStep({
           onSkip={() => { setConfirmSkip(detailSub); setDetailSub(null); }}
           onAdd={() => { handleAdd(detailSub.id); setDetailSub(null); }}
           onRemove={() => { handleRemove(detailSub.id); setDetailSub(null); }}
-          onConfidenceExplain={() => setConfidenceOpen(true)}
         />
       )}
     </>
@@ -997,7 +987,7 @@ function EmptyShell({
 /* ─────────────────────────  DETECTED SUB DETAIL  ───────────────────────── */
 
 function DetectedDetail({
-  sub, providerName, isAdded, onClose, onSkip, onAdd, onRemove, onConfidenceExplain,
+  sub, providerName, isAdded, onClose, onSkip, onAdd, onRemove,
 }: {
   sub: DetectedSubscription;
   providerName: string;
@@ -1006,10 +996,10 @@ function DetectedDetail({
   onSkip: () => void;
   onAdd: () => void;
   onRemove: () => void;
-  onConfidenceExplain: () => void;
 }) {
   const tracked = sub.alreadyTracked;
   const [editing, setEditing] = useState(false);
+  const [showConfidenceInfo, setShowConfidenceInfo] = useState(false);
   const [form, setForm] = useState({
     name: sub.name,
     amount: sub.amount.toString(),
@@ -1073,7 +1063,7 @@ function DetectedDetail({
               Tracked
             </span>
           ) : (
-            <button onClick={onConfidenceExplain} style={{
+            <button onClick={() => setShowConfidenceInfo(v => !v)} style={{
               display: "inline-flex", alignItems: "center", gap: "4px",
               padding: "4px 10px", borderRadius: "999px", marginBottom: "4px",
               fontSize: "11px", fontWeight: 700,
@@ -1088,6 +1078,26 @@ function DetectedDetail({
 
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", padding: "20px 20px 24px", scrollbarWidth: "none" }}>
+        {showConfidenceInfo && !tracked && (
+          <div style={{
+            padding: "16px", borderRadius: "16px", marginBottom: "16px",
+            background: "var(--app-card)", border: "1px solid var(--app-border)",
+            boxShadow: "var(--app-card-shadow)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+              <Sparkles size={14} color="var(--app-blue)" />
+              <p style={{ fontSize: "13px", fontWeight: 700, color: "var(--app-text-primary)" }}>Match confidence</p>
+            </div>
+            <p style={{ fontSize: "12px", color: "var(--app-text-secondary)", lineHeight: 1.5, marginBottom: "10px" }}>
+              How sure we are this is a real subscription based on charge patterns, merchant name, and frequency.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <ConfidenceRow color="var(--app-green)" bg="var(--app-trial-bg)" label="80%+" desc="Auto-add recommended" />
+              <ConfidenceRow color="var(--app-yellow)" bg="var(--app-yellow-bg)" label="60–79%" desc="Likely a subscription — quick review" />
+              <ConfidenceRow color="var(--app-red)" bg="var(--app-red-bg)" label="< 60%" desc="Review carefully before adding" />
+            </div>
+          </div>
+        )}
         {tracked && (
           <div style={{
             display: "flex", alignItems: "flex-start", gap: "10px",

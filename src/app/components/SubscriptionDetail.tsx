@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { X, ExternalLink, Pause, Trash2, ChevronRight, Calendar, CreditCard, BarChart2, RefreshCw, CheckCircle, Pencil, XCircle } from "lucide-react";
+import { X, ExternalLink, Trash2, ChevronRight, Calendar, CreditCard, BarChart2, RefreshCw, CheckCircle, Pencil, XCircle } from "lucide-react";
 import { SUBSCRIPTIONS } from "./data";
 import { SubscriptionEditForm } from "./SubscriptionEditForm";
 
@@ -24,7 +23,6 @@ export function SubscriptionDetail({ subscriptionId, onClose }: SubscriptionDeta
   const [stage, setStage] = useState<"idle" | "confirming" | "cancelled" | "editing" | "deleting" | "deleted">("idle");
   const [deleteReason, setDeleteReason] = useState<string | null>(null);
   const sub = SUBSCRIPTIONS.find(s => s.id === subscriptionId);
-  const [locallyPaused, setLocallyPaused] = useState(sub?.status === "paused");
   const [editForm, setEditForm] = useState({
     name: sub?.name ?? "",
     amount: sub?.amount.toString() ?? "",
@@ -159,25 +157,6 @@ export function SubscriptionDetail({ subscriptionId, onClose }: SubscriptionDeta
           >
             <Pencil size={16} color="var(--app-blue)" />
             <span style={{ fontSize: "14px", color: "var(--app-text-primary)", flex: 1, textAlign: "left" }}>Edit details</span>
-            <ChevronRight size={14} color="var(--app-text-muted)" />
-          </button>
-          <button
-            onClick={() => {
-              const next = !locallyPaused;
-              setLocallyPaused(next);
-              toast(next ? `${sub.name} tracking paused` : `${sub.name} tracking resumed`, { duration: 2500 });
-            }}
-            style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", borderRadius: "16px", background: "var(--app-card)", border: "1px solid var(--app-border)", cursor: "pointer", boxShadow: "var(--app-card-shadow)" }}
-          >
-            <Pause size={16} color="var(--app-yellow)" />
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <span style={{ fontSize: "14px", color: "var(--app-text-primary)", display: "block" }}>
-                {locallyPaused ? "Resume subscription" : "Pause subscription"}
-              </span>
-              {!locallyPaused && (
-                <span style={{ fontSize: "11px", color: "var(--app-text-muted)" }}>Pauses tracking in this app</span>
-              )}
-            </div>
             <ChevronRight size={14} color="var(--app-text-muted)" />
           </button>
           <button
