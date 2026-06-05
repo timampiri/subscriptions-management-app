@@ -6,8 +6,8 @@
 **Variant B** (new): 4-item nav + centre "+" button — Home, Subs, [+], Analyze (Stats+Insights merged), Profile
 
 **URLs:**
-- Variant A: `[your-vercel-url]/?v=a`
-- Variant B: `[your-vercel-url]/?v=b`
+- Variant A: https://subscriptions-management-app.vercel.app/?v=a
+- Variant B: https://subscriptions-management-app.vercel.app/?v=b
 
 **Hypothesis:** Merging Stats and Insights into a single "Analyze" tab will reduce navigation errors (users won't have to decide which of the two to visit first) while the centred "+" button will make the Add action more discoverable than the header button.
 
