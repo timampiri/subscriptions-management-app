@@ -377,6 +377,10 @@ function ResultsStep({
   const selectAll = () => setSelectedIds(new Set(selectableIds));
   const deselectAll = () => setSelectedIds(new Set());
 
+  const addAll = () => {
+    setAdded(prev => { const n = new Set(prev); detectedRows.forEach(s => n.add(s.id)); return n; });
+  };
+
   const bulkAdd = () => {
     setAdded(prev => { const n = new Set(prev); selectedIds.forEach(id => n.add(id)); return n; });
     exitSelectMode();
@@ -424,7 +428,7 @@ function ResultsStep({
         />
       )}
 
-      <div style={{ flex: 1, overflowY: "auto", padding: selectMode ? "0 20px 100px" : "0 20px 24px", scrollbarWidth: "none" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: selectMode ? "0 20px 100px" : (activeTab === "detected" && detectedCount > 0) ? "0 20px 84px" : "0 20px 24px", scrollbarWidth: "none" }}>
         {/* Headline */}
         <div style={{ marginBottom: "14px" }}>
           <h3 style={{ fontSize: "20px", fontWeight: 700, color: "var(--app-text-primary)", marginBottom: "4px" }}>
@@ -607,7 +611,7 @@ function ResultsStep({
                         fontSize: "10px", fontWeight: 700,
                       }}
                     >
-                      {sub.confidence}% match <Info size={10} />
+                      {confidenceLabel(sub.confidence)} <Info size={10} />
                     </button>
                     <div style={{ flex: 1 }} />
                     <button
@@ -735,6 +739,32 @@ function ResultsStep({
               Add back ({selectedIds.size})
             </button>
           )}
+        </div>
+      )}
+
+      {/* Persistent Add all footer */}
+      {!selectMode && activeTab === "detected" && detectedCount > 0 && (
+        <div style={{
+          position: "absolute", bottom: 0, left: 0, right: 0,
+          padding: "12px 20px 20px", flexShrink: 0,
+          background: "var(--app-frame-bg)", borderTop: "1px solid var(--app-border)",
+          display: "flex", alignItems: "center", gap: "12px",
+        }}>
+          <p style={{ flex: 1, fontSize: "12px", color: "var(--app-text-muted)", fontFamily: T.ff }}>
+            {detectedCount} to review
+          </p>
+          <button
+            onClick={addAll}
+            style={{
+              padding: "10px 20px", borderRadius: "999px",
+              background: "var(--app-blue)", color: "#fff",
+              border: "none", cursor: "pointer",
+              fontSize: "13px", fontWeight: 700, fontFamily: T.ff,
+              boxShadow: "0 4px 12px var(--app-blue-glow)",
+            }}
+          >
+            Add all ({detectedCount})
+          </button>
         </div>
       )}
 
@@ -1070,7 +1100,7 @@ function DetectedDetail({
               background: confidenceBg(sub.confidence), color: confidenceFg(sub.confidence),
               border: "none", cursor: "pointer",
             }}>
-              {sub.confidence}% match <Info size={11} />
+              {confidenceLabel(sub.confidence)} · {sub.confidence}% <Info size={11} />
             </button>
           )}
         </div>
@@ -1484,6 +1514,11 @@ function confidenceFg(c: number) {
   if (c >= 80) return "var(--app-green)";
   if (c >= 60) return "var(--app-yellow)";
   return "var(--app-red)";
+}
+function confidenceLabel(c: number) {
+  if (c >= 80) return "Very likely";
+  if (c >= 60) return "Probably";
+  return "Not sure";
 }
 
 function fmtDate(iso: string) {

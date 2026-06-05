@@ -12,7 +12,7 @@ import { SubscriptionDetail } from "./components/SubscriptionDetail";
 import { ConnectAccountScreen } from "./components/ConnectAccountScreen";
 import { AnalyzeScreen } from "./components/AnalyzeScreen";
 
-const variantB = new URLSearchParams(window.location.search).get("v") === "b";
+const variantB = new URLSearchParams(window.location.search).get("v") !== "a";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");

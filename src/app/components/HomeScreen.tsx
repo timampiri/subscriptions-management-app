@@ -27,7 +27,7 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
   const monthly = totalMonthly(SUBSCRIPTIONS);
   const upcoming = ALERTS.filter((a) => a.daysUntil <= 7);
 
-  const variantB = new URLSearchParams(window.location.search).get("v") === "b";
+  const variantB = new URLSearchParams(window.location.search).get("v") !== "a";
 
   const T = {
     ff: "'DM Sans', sans-serif",

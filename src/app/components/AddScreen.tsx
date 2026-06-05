@@ -296,57 +296,35 @@ export function AddScreen({ onBack, onConnectNew }: AddScreenProps) {
         </div>
       )}
 
-      {/* Screenshot tab */}
+      {/* Screenshot tab — coming soon */}
       {tab === "screenshot" && (
-        <div style={{ padding: "0 20px 32px" }}>
-          <div
-            onDragOver={e => { e.preventDefault(); setScreenshotDragging(true); }}
-            onDragLeave={() => setScreenshotDragging(false)}
-            onDrop={e => { e.preventDefault(); setScreenshotDragging(false); setScreenshotUploaded(true); }}
+        <div style={{ padding: "40px 20px 32px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+          <div style={{
+            width: "72px", height: "72px", borderRadius: "50%",
+            background: "var(--app-surface)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Camera size={28} color="var(--app-text-muted)" />
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--app-text-primary)", marginBottom: "6px" }}>
+              Coming soon
+            </p>
+            <p style={{ fontSize: "13px", color: "var(--app-text-muted)", lineHeight: 1.5 }}>
+              Screenshot detection is in development. Use Auto-detect or Manual entry in the meantime.
+            </p>
+          </div>
+          <button
+            onClick={() => setTab("auto")}
             style={{
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              padding: "48px 24px", borderRadius: "20px", marginBottom: "16px", cursor: "pointer",
-              border: `2px dashed ${screenshotDragging ? "var(--app-blue)" : screenshotUploaded ? "var(--app-green)" : "var(--app-border-input)"}`,
-              background: screenshotDragging ? "var(--app-blue-bg)" : screenshotUploaded ? "var(--app-green-bg)" : "var(--app-surface)",
-              transition: "all 0.2s ease",
+              padding: "10px 20px", borderRadius: "999px",
+              background: "var(--app-blue)", color: "#fff",
+              border: "none", cursor: "pointer",
+              fontSize: "13px", fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            {screenshotUploaded ? (
-              <>
-                <Check size={32} color="var(--app-green)" style={{ marginBottom: "12px" }} />
-                <p style={{ fontSize: "15px", color: "var(--app-green)", fontWeight: 600, marginBottom: "4px" }}>Screenshot uploaded</p>
-                <p style={{ fontSize: "12px", color: "var(--app-text-muted)" }}>AI is analyzing your receipt…</p>
-                <button onClick={() => setScreenshotUploaded(false)} style={{ marginTop: "16px", padding: "6px", borderRadius: "50%", background: "var(--app-surface)", border: "1px solid var(--app-border)", cursor: "pointer", display: "flex" }}>
-                  <X size={14} color="var(--app-text-muted)" />
-                </button>
-              </>
-            ) : (
-              <>
-                <Upload size={28} color="var(--app-text-muted)" style={{ marginBottom: "12px" }} />
-                <p style={{ fontSize: "15px", color: "var(--app-text-primary)", fontWeight: 600, marginBottom: "4px" }}>Drop a screenshot here</p>
-                <p style={{ fontSize: "12px", color: "var(--app-text-muted)", textAlign: "center" }}>Upload a receipt, confirmation email, or subscription page</p>
-                <button
-                  onClick={() => setScreenshotUploaded(true)}
-                  style={{ marginTop: "20px", padding: "10px 20px", borderRadius: "12px", background: "var(--app-card)", fontSize: "13px", color: "var(--app-blue)", fontWeight: 600, border: "1px solid var(--app-blue-border)", cursor: "pointer", boxShadow: "var(--app-card-shadow)" }}
-                >
-                  Choose file
-                </button>
-              </>
-            )}
-          </div>
-          <div style={{ padding: "16px", borderRadius: "16px", background: "var(--app-card)", border: "1px solid var(--app-border)", boxShadow: "var(--app-card-shadow)" }}>
-            <p style={{ fontSize: "12px", color: "var(--app-text-muted)", fontWeight: 600, marginBottom: "8px" }}>How it works</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              {["Upload a screenshot of a subscription confirmation or invoice", "AI extracts name, amount, billing cycle, and renewal date", "Review and confirm the auto-filled details"].map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                  <div style={{ width: "20px", height: "20px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "2px", background: "var(--app-blue-bg)", fontSize: "10px", color: "var(--app-blue)", fontWeight: 700 }}>
-                    {i + 1}
-                  </div>
-                  <p style={{ fontSize: "12px", color: "var(--app-text-secondary)", lineHeight: 1.5 }}>{step}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+            Try Auto-detect instead
+          </button>
         </div>
       )}
 

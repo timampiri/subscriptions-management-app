@@ -47,9 +47,12 @@ export function InsightsScreen({ onSelectSubscription }: InsightsScreenProps) {
 
       {/* AI Insights */}
       <div style={{ padding: "0 20px 20px" }}>
-        <p style={{ fontSize: "12px", color: "var(--app-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "10px" }}>
-          Recommendations
-        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
+          <Sparkles size={12} color="var(--app-purple)" />
+          <p style={{ fontSize: "12px", color: "var(--app-text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+            AI Suggestions
+          </p>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {AI_INSIGHTS.map((insight) => {
             const Icon = ICON_MAP[insight.type as keyof typeof ICON_MAP];

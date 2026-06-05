@@ -6,6 +6,15 @@ import { SubscriptionCard } from "./SubscriptionCard";
 const SOURCES = ["All", "Auto-detected", "Manual"] as const;
 type SourceKey = (typeof SOURCES)[number];
 
+const SORT_OPTIONS = [
+  { key: "default",   label: "Default" },
+  { key: "cost-desc", label: "Cost: high → low" },
+  { key: "cost-asc",  label: "Cost: low → high" },
+  { key: "az",        label: "A → Z" },
+  { key: "usage",     label: "Rarely used first" },
+] as const;
+type SortKey = (typeof SORT_OPTIONS)[number]["key"];
+
 const USAGE_LEVELS = ["All", "Heavy use", "Moderate use", "Rarely used"] as const;
 type UsageKey = (typeof USAGE_LEVELS)[number];
 
@@ -203,19 +212,20 @@ function CalendarView({ subs, onSelect }: { subs: Subscription[]; onSelect: (id:
 }
 
 export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initialUsageFilter }: SubscriptionsScreenProps) {
-  const variantB = new URLSearchParams(window.location.search).get("v") === "b";
+  const variantB = new URLSearchParams(window.location.search).get("v") !== "a";
   const [view, setView] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
   const [source, setSource] = useState<SourceKey>("All");
   const [accounts, setAccounts] = useState<Set<string>>(new Set());
   const [usage, setUsage] = useState<UsageKey>((initialUsageFilter as UsageKey) ?? "All");
+  const [sort, setSort] = useState<SortKey>("default");
   const [filterOpen, setFilterOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => { onFilterOpenChange?.(filterOpen); }, [filterOpen, onFilterOpenChange]);
 
-  const activeFilterCount = (categories.size > 0 ? 1 : 0) + (source !== "All" ? 1 : 0) + (usage !== "All" ? 1 : 0);
+  const activeFilterCount = (sort !== "default" ? 1 : 0) + (categories.size > 0 ? 1 : 0) + (source !== "All" ? 1 : 0) + (usage !== "All" ? 1 : 0);
 
   const history = useMemo(() => SUBSCRIPTIONS.filter(s => s.status === "cancelled"), []);
 
@@ -236,14 +246,22 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
     return matchSearch && matchCat && matchSrc && matchUsage;
   }), [search, categories, source, accounts, usage]);
 
+  const sorted = useMemo(() => {
+    if (sort === "cost-desc") return [...filtered].sort((a, b) => b.amount - a.amount);
+    if (sort === "cost-asc")  return [...filtered].sort((a, b) => a.amount - b.amount);
+    if (sort === "az")        return [...filtered].sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === "usage")     return [...filtered].sort((a, b) => a.usageScore - b.usageScore);
+    return filtered;
+  }, [filtered, sort]);
+
   const grouped = useMemo(() => {
     const map: Record<string, Subscription[]> = {};
-    filtered.forEach(s => {
+    sorted.forEach(s => {
       if (!map[s.category]) map[s.category] = [];
       map[s.category].push(s);
     });
     return map;
-  }, [filtered]);
+  }, [sorted]);
 
   return (
     <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", fontFamily: "'DM Sans', sans-serif", scrollbarWidth: "none" }}>
@@ -356,6 +374,7 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
           source={source} setSource={setSource}
           accounts={accounts} setAccounts={setAccounts}
           usage={usage} setUsage={setUsage}
+          sort={sort} setSort={setSort}
           onClose={() => setFilterOpen(false)}
         />
       )}
@@ -438,7 +457,7 @@ function ActivePill({ label, onRemove }: { label: string; onRemove: () => void }
 }
 
 function FilterSheet({
-  categories, setCategories, source, setSource, accounts, setAccounts, usage, setUsage, onClose,
+  categories, setCategories, source, setSource, accounts, setAccounts, usage, setUsage, sort, setSort, onClose,
 }: {
   categories: Set<string>;
   setCategories: (c: Set<string>) => void;
@@ -448,6 +467,8 @@ function FilterSheet({
   setAccounts: (a: Set<string>) => void;
   usage: UsageKey;
   setUsage: (u: UsageKey) => void;
+  sort: SortKey;
+  setSort: (s: SortKey) => void;
   onClose: () => void;
 }) {
   const toggleCategory = (cat: string) => {
@@ -487,7 +508,7 @@ function FilterSheet({
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
           <h3 style={{ fontSize: "17px", fontWeight: 700, color: "var(--app-text-primary)" }}>
-            Filters
+            Sort &amp; Filter
           </h3>
           <button
             onClick={onClose}
@@ -499,6 +520,19 @@ function FilterSheet({
             <X size={14} color="var(--app-text-secondary)" />
           </button>
         </div>
+
+        <FilterSection title="Sort by">
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {SORT_OPTIONS.map(opt => (
+              <ChipButton
+                key={opt.key}
+                label={opt.label}
+                active={sort === opt.key}
+                onClick={() => setSort(opt.key)}
+              />
+            ))}
+          </div>
+        </FilterSection>
 
         <FilterSection title="Category" hint="Pick one or more">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
