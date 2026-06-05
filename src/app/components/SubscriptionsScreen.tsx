@@ -8,10 +8,10 @@ type SourceKey = (typeof SOURCES)[number];
 
 const SORT_OPTIONS = [
   { key: "default",   label: "Default" },
-  { key: "cost-desc", label: "Cost: high → low" },
-  { key: "cost-asc",  label: "Cost: low → high" },
-  { key: "az",        label: "A → Z" },
-  { key: "usage",     label: "Rarely used first" },
+  { key: "cost-desc", label: "Price: high → low" },
+  { key: "cost-asc",  label: "Price: low → high" },
+  { key: "az",        label: "Name: A → Z" },
+  { key: "usage",     label: "Least used first" },
 ] as const;
 type SortKey = (typeof SORT_OPTIONS)[number]["key"];
 
@@ -533,6 +533,8 @@ function FilterSheet({
             ))}
           </div>
         </FilterSection>
+
+        <div style={{ height: "20px" }} />
 
         <FilterSection title="Category" hint="Pick one or more">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
