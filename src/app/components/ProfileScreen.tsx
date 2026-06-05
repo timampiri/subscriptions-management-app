@@ -131,7 +131,10 @@ export function ProfileScreen({ onConnectNew }: ProfileScreenProps) {
         </div>
 
         {/* Linked accounts */}
-        <p style={sectionLabel}>Linked Accounts</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+          <p style={{ ...sectionLabel, marginBottom: 0 }}>Linked Accounts</p>
+          <button onClick={onConnectNew} style={{ fontSize: "12px", color: "var(--app-blue)", background: "none", border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>+ Add</button>
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
           {LINKED_ACCOUNTS.map((acc) => (
             <button key={acc.id} style={{ ...rowStyle, borderRadius: "14px" }}>
@@ -151,17 +154,6 @@ export function ProfileScreen({ onConnectNew }: ProfileScreenProps) {
               <ChevronRight size={16} color="var(--app-text-muted)" />
             </button>
           ))}
-          <button
-            onClick={onConnectNew}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-              padding: "12px", borderRadius: "14px",
-              background: "transparent", border: "1px dashed var(--app-border)",
-              color: "var(--app-blue)", fontSize: "13px", fontWeight: 600, cursor: "pointer",
-            }}
-          >
-            Connect new account
-          </button>
         </div>
 
         {/* Settings */}
