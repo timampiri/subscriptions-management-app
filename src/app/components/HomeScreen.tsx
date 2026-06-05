@@ -189,7 +189,7 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
             <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-muted)", letterSpacing: "0.02em", textTransform: "uppercase" }}>
               Renewals This Week
             </span>
-            <button onClick={() => onNavigate("insights")} style={{ fontSize: "12px", color: "var(--app-blue)", background: "none", border: "none", cursor: "pointer" }}>
+            <button onClick={() => onNavigate("subscriptions")} style={{ fontSize: "12px", color: "var(--app-blue)", background: "none", border: "none", cursor: "pointer" }}>
               See all
             </button>
           </div>
