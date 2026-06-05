@@ -130,7 +130,10 @@ export default function App() {
 
           {connecting && (
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", background: "var(--app-frame-bg)", zIndex: 30 }}>
-              <ConnectAccountScreen onBack={() => setConnecting(false)} />
+              <ConnectAccountScreen
+                onBack={() => setConnecting(false)}
+                onConnectComplete={() => { setConnecting(false); goTo("subscriptions"); }}
+              />
             </div>
           )}
 

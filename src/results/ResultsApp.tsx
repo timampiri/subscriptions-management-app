@@ -8,6 +8,12 @@ function taskDurationMs(r: Response): number | null {
   return new Date(r.task_completed_at).getTime() - new Date(r.task_started_at).getTime();
 }
 
+function totalTaskDurationMs(r: Response): number | null {
+  const parts = [0, 1, 2].map(i => perTaskDurationMs(r, i)).filter((d): d is number => d !== null);
+  if (parts.length === 3) return parts.reduce((a, b) => a + b, 0);
+  return taskDurationMs(r);
+}
+
 function formatDuration(ms: number): string {
   const sec = Math.round(ms / 1000);
   if (sec < 60) return `${sec}s`;
@@ -16,8 +22,8 @@ function formatDuration(ms: number): string {
   return rem > 0 ? `${min}m ${rem}s` : `${min}m`;
 }
 
-function meanDuration(rows: Response[]): string {
-  const ds = rows.map(taskDurationMs).filter((d): d is number => d !== null);
+function meanDuration(rows: Response[], fn: (r: Response) => number | null = taskDurationMs): string {
+  const ds = rows.map(fn).filter((d): d is number => d !== null);
   if (!ds.length) return "—";
   return formatDuration(ds.reduce((a, b) => a + b, 0) / ds.length);
 }
@@ -229,7 +235,7 @@ function UserDetail({
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const dur = taskDurationMs(r);
+  const dur = totalTaskDurationMs(r);
 
   const qa: { label: string; value: string | null }[] = [
     { label: "Q1 — Learnability", value: r.q1 },
@@ -427,8 +433,8 @@ export function ResultsApp() {
             <div style={{ display: "flex", gap: "12px", marginBottom: "32px", flexWrap: "wrap" }}>
               <StatCard label="Version A" value={String(a.length)} sub={`NPS: ${avgNPS(a)}`} />
               <StatCard label="Version B" value={String(b.length)} sub={`NPS: ${avgNPS(b)}`} />
-              <StatCard label="Avg task time A" value={meanDuration(a)} sub={`${a.filter(r => r.task_started_at && r.task_completed_at).length} timed`} />
-              <StatCard label="Avg task time B" value={meanDuration(b)} sub={`${b.filter(r => r.task_started_at && r.task_completed_at).length} timed`} />
+              <StatCard label="Avg task time A" value={meanDuration(a, totalTaskDurationMs)} sub={`${a.filter(r => totalTaskDurationMs(r) !== null).length} timed`} />
+              <StatCard label="Avg task time B" value={meanDuration(b, totalTaskDurationMs)} sub={`${b.filter(r => totalTaskDurationMs(r) !== null).length} timed`} />
             </div>
 
             {/* ── Task completion ── */}
@@ -477,17 +483,56 @@ export function ResultsApp() {
 
                 {/* ── Task timing ── */}
                 <h2 style={sectionTitle}>Task timing</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "32px" }}>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Version A</p>
-                    <p style={{ fontSize: "28px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", marginBottom: "0" }}>{meanDuration(a)}</p>
-                    <BarChart data={timeBucketsA} color="#1D4ED8" />
-                  </div>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Version B</p>
-                    <p style={{ fontSize: "28px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", marginBottom: "0" }}>{meanDuration(b)}</p>
-                    <BarChart data={timeBucketsB} color="#7C3AED" />
-                  </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "32px" }}>
+                  {TASK_LABELS.map((label, i) => (
+                    <div key={i} style={card}>
+                      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
+                        {label}
+                      </p>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                        {(["a", "b"] as const).map(ver => {
+                          const varRows = (ver === "a" ? a : b).map(r => ({
+                            name: r.participant_name ?? "—",
+                            ms: perTaskDurationMs(r, i),
+                            result: r[TASK_RESULT_KEYS[i]],
+                          }));
+                          const col = ver === "a" ? "#1D4ED8" : "#7C3AED";
+                          const validMs = varRows.map(p => p.ms).filter((d): d is number => d !== null);
+                          const avg = validMs.length
+                            ? formatDuration(validMs.reduce((s, d) => s + d, 0) / validMs.length)
+                            : "—";
+                          return (
+                            <div key={ver}>
+                              <p style={{ fontSize: "11px", fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                                Version {ver.toUpperCase()}
+                              </p>
+                              <p style={{ fontSize: "22px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", marginBottom: "10px" }}>
+                                {avg}
+                              </p>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                                {varRows.map(p => {
+                                  const done = p.result === "completed";
+                                  const failed = p.result === "failed";
+                                  const resultColor = done ? "#059669" : failed ? "#EF4444" : "var(--app-text-muted)";
+                                  return (
+                                    <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                                      <span style={{ color: resultColor, fontWeight: 700, width: "12px", flexShrink: 0 }}>
+                                        {done ? "✓" : failed ? "✗" : "·"}
+                                      </span>
+                                      <span style={{ color: "var(--app-text-secondary)", minWidth: "56px" }}>{p.name}</span>
+                                      <span style={{ color: "var(--app-text-muted)", fontFamily: "'DM Mono', monospace" }}>
+                                        {p.ms !== null ? formatDuration(p.ms) : "—"}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* ── Learnability ── */}
@@ -534,7 +579,7 @@ export function ResultsApp() {
                     <tr><td colSpan={8} style={{ padding: "24px", textAlign: "center", color: "var(--app-text-muted)" }}>No responses yet.</td></tr>
                   )}
                   {rows.map(r => {
-                    const dur = taskDurationMs(r);
+                    const dur = totalTaskDurationMs(r);
                     const isExpanded = expanded === r.id;
                     return (
                       <>

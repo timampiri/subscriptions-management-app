@@ -5,6 +5,7 @@ import { ProviderConnectFlow, ConnectProvider } from "./ProviderConnectFlow";
 
 interface ConnectAccountScreenProps {
   onBack: () => void;
+  onConnectComplete?: () => void;
 }
 
 const PROVIDERS = [
@@ -22,7 +23,7 @@ const PROVIDERS = [
   { id: "monzo", name: "Monzo", type: "Bank", icon: "🐷", desc: "Link via Open Banking" },
 ];
 
-export function ConnectAccountScreen({ onBack }: ConnectAccountScreenProps) {
+export function ConnectAccountScreen({ onBack, onConnectComplete }: ConnectAccountScreenProps) {
   const [search, setSearch] = useState("");
   const [activeProvider, setActiveProvider] = useState<ConnectProvider | null>(null);
   const [activeMode, setActiveMode] = useState<"fresh" | "revisit">("fresh");
@@ -95,7 +96,7 @@ export function ConnectAccountScreen({ onBack }: ConnectAccountScreenProps) {
           onCancel={() => setActiveProvider(null)}
           onComplete={activeMode === "revisit"
             ? () => setActiveProvider(null)
-            : () => { setActiveProvider(null); onBack(); }}
+            : () => { setActiveProvider(null); (onConnectComplete ?? onBack)(); }}
         />
       )}
 
