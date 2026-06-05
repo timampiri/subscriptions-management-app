@@ -1,7 +1,43 @@
 import { useState, useEffect } from "react";
 import { fetchResponses, deleteResponse, Response } from "../lib/supabase";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Design tokens ─────────────────────────────────────────────────────────────
+
+const A     = "#1D4ED8";
+const A_BG  = "#DBEAFE";
+const A_SOFT= "#EFF6FF";
+const B     = "#7C3AED";
+const B_BG  = "#EDE9FE";
+const B_SOFT= "#F5F3FF";
+const GREEN  = "#059669";
+const GREEN_BG="#D1FAE5";
+const RED    = "#EF4444";
+const RED_BG = "#FEE2E2";
+const DARK   = "#111827";
+const MID    = "#374151";
+const MUTED  = "#6B7280";
+const BORDER = "#E5E7EB";
+const PAGE   = "#F3F4F6";
+const CARD   = "#FFFFFF";
+const SURF   = "#F9FAFB";
+
+// ── Data helpers ──────────────────────────────────────────────────────────────
+
+const TASK_LABELS = [
+  "Task 1 — Find monthly spend & top category",
+  "Task 2 — Cancel underused subscription",
+  "Task 3 — Connect Gmail & add subscriptions",
+];
+const TASK_RESULT_KEYS: Array<"q8" | "q9" | "q10"> = ["q8", "q9", "q10"];
+const TASK_START_KEYS: Array<keyof Response> = ["task1_started_at", "task2_started_at", "task3_started_at"];
+const TASK_END_KEYS:   Array<keyof Response> = ["task1_ended_at",   "task2_ended_at",   "task3_ended_at"];
+
+function perTaskDurationMs(r: Response, i: number): number | null {
+  const s = r[TASK_START_KEYS[i]] as string | null;
+  const e = r[TASK_END_KEYS[i]]   as string | null;
+  if (!s || !e) return null;
+  return new Date(e).getTime() - new Date(s).getTime();
+}
 
 function taskDurationMs(r: Response): number | null {
   if (!r.task_started_at || !r.task_completed_at) return null;
@@ -14,60 +50,57 @@ function totalTaskDurationMs(r: Response): number | null {
   return taskDurationMs(r);
 }
 
-function formatDuration(ms: number): string {
-  const sec = Math.round(ms / 1000);
-  if (sec < 60) return `${sec}s`;
-  const min = Math.floor(sec / 60);
-  const rem = sec % 60;
-  return rem > 0 ? `${min}m ${rem}s` : `${min}m`;
+function fmt(ms: number): string {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  return s % 60 > 0 ? `${m}m ${s % 60}s` : `${m}m`;
 }
 
-function meanDuration(rows: Response[], fn: (r: Response) => number | null = taskDurationMs): string {
+function meanMs(rows: Response[], fn: (r: Response) => number | null = totalTaskDurationMs): number | null {
   const ds = rows.map(fn).filter((d): d is number => d !== null);
-  if (!ds.length) return "—";
-  return formatDuration(ds.reduce((a, b) => a + b, 0) / ds.length);
+  return ds.length ? ds.reduce((a, b) => a + b, 0) / ds.length : null;
 }
 
-const TIME_BUCKETS = ["<1m", "1–2m", "2–3m", "3–5m", ">5m"];
-
-function timeBucket(ms: number): string {
-  const m = ms / 60000;
-  if (m < 1) return "<1m";
-  if (m < 2) return "1–2m";
-  if (m < 3) return "2–3m";
-  if (m < 5) return "3–5m";
-  return ">5m";
-}
-
-const TASK_LABELS = [
-  "Task 1 — Find monthly spend & top category",
-  "Task 2 — Cancel underused subscription",
-  "Task 3 — Connect Gmail & add subscriptions",
-];
-const TASK_RESULT_KEYS: Array<"q8" | "q9" | "q10"> = ["q8", "q9", "q10"];
-const TASK_START_KEYS: Array<keyof Response> = ["task1_started_at", "task2_started_at", "task3_started_at"];
-const TASK_END_KEYS: Array<keyof Response> = ["task1_ended_at", "task2_ended_at", "task3_ended_at"];
-
-function perTaskDurationMs(r: Response, i: number): number | null {
-  const s = r[TASK_START_KEYS[i]] as string | null;
-  const e = r[TASK_END_KEYS[i]] as string | null;
-  if (!s || !e) return null;
-  return new Date(e).getTime() - new Date(s).getTime();
+function meanDuration(rows: Response[], fn = totalTaskDurationMs): string {
+  const ms = meanMs(rows, fn);
+  return ms !== null ? fmt(ms) : "—";
 }
 
 function taskStats(rows: Response[], i: number) {
   const key = TASK_RESULT_KEYS[i];
-  const attempted = rows.filter(r => r[key] !== null);
-  const completed = attempted.filter(r => r[key] === "completed");
-  const durations = attempted.map(r => perTaskDurationMs(r, i)).filter((d): d is number => d !== null);
-  const avgDur = durations.length
-    ? formatDuration(durations.reduce((a, b) => a + b, 0) / durations.length)
-    : "—";
+  const attempted  = rows.filter(r => r[key] !== null);
+  const completed  = attempted.filter(r => r[key] === "completed");
+  const durations  = attempted.map(r => perTaskDurationMs(r, i)).filter((d): d is number => d !== null);
+  const avgMs      = durations.length ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
   return {
+    completed: completed.length,
+    attempted: attempted.length,
     rate: attempted.length ? `${completed.length}/${attempted.length}` : "—",
-    avgDur,
-    n: attempted.length,
+    avgDur: avgMs !== null ? fmt(avgMs) : "—",
+    avgMs,
   };
+}
+
+function completionPct(rows: Response[]): number | null {
+  const attempts  = rows.flatMap(r => TASK_RESULT_KEYS.map(k => r[k])).filter(v => v !== null);
+  const completed = attempts.filter(v => v === "completed");
+  return attempts.length ? Math.round((completed.length / attempts.length) * 100) : null;
+}
+
+function avgNPS(rows: Response[]): number | null {
+  const valid = rows.filter(r => r.nps !== null && r.nps !== undefined);
+  return valid.length ? valid.reduce((s, r) => s + (r.nps as number), 0) / valid.length : null;
+}
+
+function computeNPS(rows: Response[]) {
+  const valid = rows.filter(r => r.nps !== null && r.nps !== undefined);
+  if (!valid.length) return null;
+  const det  = valid.filter(r => (r.nps as number) <= 6).length;
+  const pass = valid.filter(r => (r.nps as number) >= 7 && (r.nps as number) <= 8).length;
+  const prom = valid.filter(r => (r.nps as number) >= 9).length;
+  const n = valid.length;
+  return { score: Math.round((prom / n - det / n) * 100), det, pass, prom, n };
 }
 
 const AGE_RANGE_KEYS = ["18–24", "25–34", "35–44", "45–54", "55+"];
@@ -90,75 +123,119 @@ const LEARNABILITY_SHORT: Record<string, string> = {
   "Easy — mostly straightforward": "Easy",
   "Very easy — everything was where I expected it": "Very easy",
 };
-const USAGE_INTENT_OPTIONS = [
+const USAGE_OPTIONS = [
   "Daily", "A few times a week", "Weekly", "Monthly",
   "Rarely / only when something comes up",
 ];
 const USAGE_SHORT: Record<string, string> = {
-  "Daily": "Daily",
-  "A few times a week": "Few/wk",
-  "Weekly": "Weekly",
-  "Monthly": "Monthly",
+  "Daily": "Daily", "A few times a week": "Few/wk",
+  "Weekly": "Weekly", "Monthly": "Monthly",
   "Rarely / only when something comes up": "Rarely",
 };
+const QUAL_QUESTION_TEXT: Partial<Record<keyof Response, string>> = {
+  q2: "Was there any moment where you weren't sure where to tap next?",
+  q3: "If you had to describe this app to a friend in one sentence, what would you say?",
+  q4: "Did you notice any feature you weren't sure what it does?",
+  q5: "Is there anything you expected the app to do that it didn't?",
+  q6: "Is there a feature you would like to have in a similar app?",
+};
 
-function countByKey(
-  rows: Response[],
-  keyFn: (r: Response) => string | null,
-  allKeys: string[],
-): { label: string; count: number }[] {
+function countByKey(rows: Response[], keyFn: (r: Response) => string | null, keys: string[]) {
   const map: Record<string, number> = {};
-  allKeys.forEach(k => (map[k] = 0));
-  rows.forEach(r => {
-    const k = keyFn(r);
-    if (k && allKeys.includes(k)) map[k]++;
-  });
-  return allKeys.map(k => ({ label: k, count: map[k] }));
-}
-
-function computeNPS(rows: Response[]) {
-  const valid = rows.filter(r => r.nps !== null && r.nps !== undefined);
-  if (!valid.length) return null;
-  const detractors = valid.filter(r => (r.nps as number) <= 6).length;
-  const passives = valid.filter(r => (r.nps as number) >= 7 && (r.nps as number) <= 8).length;
-  const promoters = valid.filter(r => (r.nps as number) >= 9).length;
-  const n = valid.length;
-  const score = Math.round((promoters / n - detractors / n) * 100);
-  return { score, detractors, passives, promoters, n };
-}
-
-function avgNPS(rows: Response[]): string {
-  const nps = computeNPS(rows);
-  if (!nps) return "—";
-  return (nps.score > 0 ? "+" : "") + nps.score;
+  keys.forEach(k => (map[k] = 0));
+  rows.forEach(r => { const k = keyFn(r); if (k && k in map) map[k]++; });
+  return keys.map(k => ({ label: k, count: map[k] }));
 }
 
 function fmtTime(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " + d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) + " " +
+    d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
-// ── UI components ─────────────────────────────────────────────────────────────
+// ── UI primitives ─────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function Section({ title, children, style }: { title: string; children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div style={{ flex: 1, minWidth: "160px", background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "14px", padding: "16px 18px" }}>
-      <p style={{ fontSize: "11px", color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>{label}</p>
-      <p style={{ fontSize: "26px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ fontSize: "11px", color: "var(--app-text-muted)", marginTop: "4px" }}>{sub}</p>}
+    <section style={{ marginBottom: "36px", ...style }}>
+      <h2 style={{
+        fontSize: "11px", fontWeight: 700, color: MUTED,
+        textTransform: "uppercase", letterSpacing: "0.09em",
+        paddingBottom: "10px", marginBottom: "14px",
+        borderBottom: `1px solid ${BORDER}`,
+      }}>
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+}
+
+function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: CARD, border: `1px solid ${BORDER}`,
+      borderRadius: "14px", padding: "20px 22px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.05)", ...style,
+    }}>
+      {children}
     </div>
+  );
+}
+
+function VerLabel({ ver }: { ver: "a" | "b" }) {
+  return (
+    <p style={{
+      fontSize: "10px", fontWeight: 700,
+      color: ver === "a" ? A : B,
+      textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "4px",
+    }}>
+      Version {ver.toUpperCase()}
+    </p>
+  );
+}
+
+function VerPill({ ver }: { ver: string }) {
+  return (
+    <span style={{
+      padding: "2px 8px", borderRadius: "999px",
+      fontSize: "11px", fontWeight: 700,
+      background: ver === "a" ? A_BG : B_BG,
+      color: ver === "a" ? A : B,
+    }}>
+      {ver.toUpperCase()}
+    </span>
+  );
+}
+
+function ResultDot({ result }: { result: string | null }) {
+  const done   = result === "completed";
+  const failed = result === "failed";
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      width: "20px", height: "20px", borderRadius: "50%", fontSize: "11px", fontWeight: 700,
+      background: done ? GREEN_BG : failed ? RED_BG : SURF,
+      color: done ? GREEN : failed ? RED : MUTED,
+    }}>
+      {done ? "✓" : failed ? "✗" : "·"}
+    </span>
   );
 }
 
 function BarChart({ data, color }: { data: { label: string; count: number }[]; color: string }) {
   const max = Math.max(...data.map(d => d.count), 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", height: "96px", paddingTop: "16px" }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: "6px", height: "80px", paddingTop: "12px" }}>
       {data.map(({ label, count }) => (
         <div key={label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", minWidth: 0 }}>
-          <span style={{ fontSize: "10px", color: "var(--app-text-muted)", fontFamily: "'DM Mono', monospace", visibility: count > 0 ? "visible" : "hidden" }}>{count}</span>
-          <div style={{ width: "100%", height: `${Math.max((count / max) * 56, count > 0 ? 3 : 0)}px`, background: count > 0 ? color : "var(--app-border)", borderRadius: "4px 4px 0 0" }} />
-          <span style={{ fontSize: "10px", color: "var(--app-text-muted)", textAlign: "center", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{label}</span>
+          <span style={{ fontSize: "10px", color: MUTED, fontFamily: "'DM Mono', monospace", visibility: count > 0 ? "visible" : "hidden" }}>{count}</span>
+          <div style={{
+            width: "100%", borderRadius: "4px 4px 0 0",
+            height: `${Math.max((count / max) * 48, count > 0 ? 3 : 0)}px`,
+            background: count > 0 ? color : BORDER,
+          }} />
+          <span style={{ fontSize: "9px", color: MUTED, textAlign: "center", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{label}</span>
         </div>
       ))}
     </div>
@@ -167,22 +244,28 @@ function BarChart({ data, color }: { data: { label: string; count: number }[]; c
 
 function NPSBar({ rows }: { rows: Response[] }) {
   const nps = computeNPS(rows);
-  if (!nps) return <p style={{ fontSize: "13px", color: "var(--app-text-muted)" }}>No NPS data yet.</p>;
-  const { score, detractors, passives, promoters, n } = nps;
+  const avg = avgNPS(rows);
+  if (!nps) return <p style={{ fontSize: "13px", color: MUTED }}>No data yet.</p>;
+  const { score, det, pass, prom, n } = nps;
   return (
     <div>
-      <p style={{ fontSize: "28px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", marginBottom: "12px" }}>
-        {score > 0 ? "+" : ""}{score}
-      </p>
-      <div style={{ display: "flex", height: "10px", borderRadius: "5px", overflow: "hidden", gap: "2px" }}>
-        {detractors > 0 && <div style={{ flex: detractors, background: "#EF4444" }} />}
-        {passives > 0 && <div style={{ flex: passives, background: "#F59E0B" }} />}
-        {promoters > 0 && <div style={{ flex: promoters, background: "#10B981" }} />}
+      <div style={{ display: "flex", alignItems: "baseline", gap: "10px", marginBottom: "10px" }}>
+        <span style={{ fontSize: "36px", fontWeight: 700, color: DARK, fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
+          {score > 0 ? "+" : ""}{score}
+        </span>
+        {avg !== null && (
+          <span style={{ fontSize: "13px", color: MUTED }}>avg {avg.toFixed(1)} / 10</span>
+        )}
       </div>
-      <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
-        <span style={{ fontSize: "11px", color: "#EF4444" }}>Detractors {detractors} ({Math.round(detractors / n * 100)}%)</span>
-        <span style={{ fontSize: "11px", color: "#D97706" }}>Passives {passives} ({Math.round(passives / n * 100)}%)</span>
-        <span style={{ fontSize: "11px", color: "#059669" }}>Promoters {promoters} ({Math.round(promoters / n * 100)}%)</span>
+      <div style={{ display: "flex", height: "6px", borderRadius: "3px", overflow: "hidden", gap: "2px", marginBottom: "8px" }}>
+        {det  > 0 && <div style={{ flex: det,  background: RED,     borderRadius: "3px 0 0 3px" }} />}
+        {pass > 0 && <div style={{ flex: pass, background: "#F59E0B" }} />}
+        {prom > 0 && <div style={{ flex: prom, background: GREEN,   borderRadius: prom === n ? "3px" : "0 3px 3px 0" }} />}
+      </div>
+      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+        <span style={{ fontSize: "11px", color: RED }}>Detractors {det} ({Math.round(det / n * 100)}%)</span>
+        <span style={{ fontSize: "11px", color: "#D97706" }}>Passives {pass} ({Math.round(pass / n * 100)}%)</span>
+        <span style={{ fontSize: "11px", color: GREEN }}>Promoters {prom} ({Math.round(prom / n * 100)}%)</span>
       </div>
     </div>
   );
@@ -190,18 +273,18 @@ function NPSBar({ rows }: { rows: Response[] }) {
 
 function ProfessionList({ data }: { data: { label: string; count: number }[] }) {
   const sorted = [...data].sort((a, b) => b.count - a.count).filter(d => d.count > 0);
-  if (!sorted.length) return <p style={{ fontSize: "13px", color: "var(--app-text-muted)" }}>No data yet.</p>;
-  const maxCount = sorted[0].count;
+  if (!sorted.length) return <p style={{ fontSize: "13px", color: MUTED }}>No data yet.</p>;
+  const max = sorted[0].count;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
       {sorted.map(({ label, count }) => (
         <div key={label}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-            <span style={{ fontSize: "12px", color: "var(--app-text-primary)" }}>{label}</span>
-            <span style={{ fontSize: "12px", color: "var(--app-text-muted)", fontFamily: "'DM Mono', monospace" }}>{count}</span>
+            <span style={{ fontSize: "12px", color: MID }}>{label}</span>
+            <span style={{ fontSize: "12px", color: MUTED, fontFamily: "'DM Mono', monospace" }}>{count}</span>
           </div>
-          <div style={{ height: "4px", background: "var(--app-border)", borderRadius: "2px" }}>
-            <div style={{ height: "100%", width: `${(count / maxCount) * 100}%`, background: "#7C3AED", borderRadius: "2px" }} />
+          <div style={{ height: "4px", background: BORDER, borderRadius: "2px" }}>
+            <div style={{ height: "100%", width: `${(count / max) * 100}%`, background: B, borderRadius: "2px" }} />
           </div>
         </div>
       ))}
@@ -209,128 +292,120 @@ function ProfessionList({ data }: { data: { label: string; count: number }[] }) 
   );
 }
 
-function QualCard({ name, text, variant }: { name: string; text: string | null; variant: string }) {
-  if (!text) return null;
+function QualCard({ name, text, ver }: { name: string; text: string | null; ver: string }) {
+  const isEmpty = !text || text.toLowerCase() === "no" || text.toLowerCase() === "nope";
   return (
-    <div style={{ background: "var(--app-surface)", border: "1px solid var(--app-border)", borderRadius: "10px", padding: "12px 14px", marginBottom: "8px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-        <span style={{ fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "999px", background: variant === "a" ? "#DBEAFE" : "#EDE9FE", color: variant === "a" ? "#1D4ED8" : "#7C3AED" }}>
-          {variant.toUpperCase()}
-        </span>
-        <span style={{ fontSize: "12px", color: "var(--app-text-muted)" }}>{name}</span>
+    <div style={{
+      border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "12px 14px", marginBottom: "8px",
+      background: isEmpty ? SURF : CARD,
+      boxShadow: isEmpty ? "none" : "0 1px 2px rgba(0,0,0,0.04)",
+      opacity: isEmpty ? 0.65 : 1,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: isEmpty ? 0 : "8px" }}>
+        <VerPill ver={ver} />
+        <span style={{ fontSize: "12px", fontWeight: 500, color: MID }}>{name}</span>
+        {isEmpty && <span style={{ fontSize: "11px", color: MUTED, marginLeft: "auto" }}>No issues reported</span>}
       </div>
-      <p style={{ fontSize: "13px", color: "var(--app-text-primary)", lineHeight: 1.5 }}>{text}</p>
+      {!isEmpty && (
+        <p style={{ fontSize: "13px", color: MID, lineHeight: 1.55, margin: 0, fontStyle: "italic" }}>
+          "{text}"
+        </p>
+      )}
     </div>
   );
 }
 
-// ── Per-user expanded detail ───────────────────────────────────────────────────
+// ── Expanded row detail ───────────────────────────────────────────────────────
 
-function UserDetail({
-  r,
-  onDelete,
-}: {
-  r: Response;
-  onDelete: (id: string) => Promise<void>;
-}) {
-  const [confirmDelete, setConfirmDelete] = useState(false);
+function UserDetail({ r, onDelete }: { r: Response; onDelete: (id: string) => Promise<void> }) {
+  const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const dur = totalTaskDurationMs(r);
 
-  const qa: { label: string; value: string | null }[] = [
-    { label: "Q1 — Learnability", value: r.q1 },
-    { label: "Q2 — Navigation clarity", value: r.q2 },
-    { label: "Q3 — First impression", value: r.q3 },
-    { label: "Q4 — Feature discoverability", value: r.q4 },
-    { label: "Q5 — Unmet expectations", value: r.q5 },
-    { label: "Q6 — Desired features", value: r.q6 },
-    { label: "Q7 — Usage intent", value: r.q7 },
-    { label: "Q8 — NPS", value: r.nps !== null && r.nps !== undefined ? String(r.nps) + " / 10" : null },
-  ];
-
-  async function handleDelete() {
-    setDeleting(true);
-    await onDelete(r.id);
-    setDeleting(false);
-  }
+  const totalMs = totalTaskDurationMs(r);
+  const varCol  = r.variant === "a" ? A : B;
 
   return (
-    <div style={{ padding: "20px 18px", background: "var(--app-surface)" }}>
-      {/* Participant summary */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "14px", padding: "12px 14px", background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "10px" }}>
+    <div style={{ padding: "20px 22px", background: SURF, borderTop: `2px solid ${r.variant === "a" ? A_BG : B_BG}` }}>
+
+      {/* Meta row */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
         {[
-          ["Name", r.participant_name ?? "—"],
           ["Version", r.variant.toUpperCase()],
           ["Age", r.age_range ?? "—"],
           ["Profession", r.profession ?? "—"],
-          ["Total task time", dur !== null ? formatDuration(dur) : "—"],
+          ["Total time", totalMs !== null ? fmt(totalMs) : "—"],
+          ["NPS", r.nps !== null && r.nps !== undefined ? `${r.nps} / 10` : "—"],
           ["Submitted", fmtTime(r.created_at)],
         ].map(([label, val]) => (
-          <div key={label}>
-            <p style={{ fontSize: "10px", color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "2px" }}>{label}</p>
-            <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-primary)" }}>{val}</p>
+          <div key={label} style={{ padding: "8px 12px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: "10px" }}>
+            <p style={{ fontSize: "10px", color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "2px" }}>{label}</p>
+            <p style={{ fontSize: "13px", fontWeight: 600, color: label === "Version" ? varCol : DARK }}>{val}</p>
           </div>
         ))}
       </div>
 
-      {/* Per-task breakdown */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "14px" }}>
-        {TASK_LABELS.map((label, i) => {
+      {/* Task breakdown */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "16px" }}>
+        {TASK_LABELS.map((_, i) => {
           const result = r[TASK_RESULT_KEYS[i]];
-          const ms = perTaskDurationMs(r, i);
-          const resultColor = result === "completed" ? "#059669" : result === "failed" ? "#EF4444" : "var(--app-text-muted)";
+          const ms     = perTaskDurationMs(r, i);
+          const done   = result === "completed";
+          const failed = result === "failed";
           return (
-            <div key={i} style={{ background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "10px", padding: "10px 12px" }}>
-              <p style={{ fontSize: "10px", fontWeight: 600, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
+            <div key={i} style={{
+              background: done ? GREEN_BG : failed ? RED_BG : SURF,
+              border: `1px solid ${done ? "#A7F3D0" : failed ? "#FECACA" : BORDER}`,
+              borderRadius: "10px", padding: "10px 14px",
+            }}>
+              <p style={{ fontSize: "10px", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
                 Task {i + 1}
               </p>
-              <p style={{ fontSize: "13px", fontWeight: 700, color: resultColor, marginBottom: "2px", textTransform: "capitalize" }}>
-                {result ?? "—"}
+              <p style={{ fontSize: "13px", fontWeight: 700, color: done ? GREEN : failed ? RED : MUTED, marginBottom: "2px" }}>
+                {done ? "✓ Completed" : failed ? "✗ Failed" : "—"}
               </p>
-              <p style={{ fontSize: "11px", color: "var(--app-text-muted)", fontFamily: "'DM Mono', monospace" }}>
-                {ms !== null ? formatDuration(ms) : "—"}
+              <p style={{ fontSize: "11px", color: MUTED, fontFamily: "'DM Mono', monospace" }}>
+                {ms !== null ? fmt(ms) : "—"}
               </p>
             </div>
           );
         })}
       </div>
 
-      {/* All Q&A */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "18px" }}>
-        {qa.map(({ label, value }) => (
-          value ? (
-            <div key={label} style={{ background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "10px", padding: "12px 14px" }}>
-              <p style={{ fontSize: "10px", fontWeight: 600, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{label}</p>
-              <p style={{ fontSize: "13px", color: "var(--app-text-primary)", lineHeight: 1.5 }}>{value}</p>
-            </div>
-          ) : null
+      {/* Q&A grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "16px" }}>
+        {([
+          ["Q1 — Learnability",             r.q1],
+          ["Q2 — Navigation clarity",        r.q2],
+          ["Q3 — First impression",          r.q3],
+          ["Q4 — Feature discoverability",   r.q4],
+          ["Q5 — Unmet expectations",        r.q5],
+          ["Q6 — Desired features",          r.q6],
+          ["Q7 — Usage intent",              r.q7],
+        ] as [string, string | null][]).filter(([, v]) => v).map(([label, value]) => (
+          <div key={label} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: "10px", padding: "12px 14px" }}>
+            <p style={{ fontSize: "10px", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{label}</p>
+            <p style={{ fontSize: "13px", color: MID, lineHeight: 1.5 }}>{value}</p>
+          </div>
         ))}
       </div>
 
       {/* Delete */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px", alignItems: "center" }}>
-        {confirmDelete ? (
+        {confirm ? (
           <>
-            <span style={{ fontSize: "13px", color: "var(--app-text-muted)" }}>Delete this response?</span>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              style={{ padding: "7px 14px", borderRadius: "8px", border: "none", background: "#EF4444", color: "#fff", fontSize: "13px", fontWeight: 600, cursor: deleting ? "not-allowed" : "pointer", fontFamily: "'DM Sans', sans-serif", opacity: deleting ? 0.6 : 1 }}
-            >
+            <span style={{ fontSize: "13px", color: MUTED }}>Delete this response?</span>
+            <button onClick={async () => { setDeleting(true); await onDelete(r.id); }} disabled={deleting}
+              style={{ padding: "7px 14px", borderRadius: "8px", border: "none", background: RED, color: "#fff", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
               {deleting ? "Deleting…" : "Yes, delete"}
             </button>
-            <button
-              onClick={() => setConfirmDelete(false)}
-              style={{ padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--app-border)", background: "var(--app-card)", color: "var(--app-text-primary)", fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
-            >
+            <button onClick={() => setConfirm(false)}
+              style={{ padding: "7px 14px", borderRadius: "8px", border: `1px solid ${BORDER}`, background: CARD, color: MID, fontSize: "13px", fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
               Cancel
             </button>
           </>
         ) : (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            style={{ padding: "7px 14px", borderRadius: "8px", border: "1px solid var(--app-border)", background: "var(--app-card)", color: "var(--app-text-muted)", fontSize: "13px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
-          >
+          <button onClick={() => setConfirm(true)}
+            style={{ padding: "6px 12px", borderRadius: "8px", border: `1px solid ${BORDER}`, background: "transparent", color: MUTED, fontSize: "12px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
             Delete response
           </button>
         )}
@@ -339,26 +414,20 @@ function UserDetail({
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Main ──────────────────────────────────────────────────────────────────────
 
 export function ResultsApp() {
-  const [rows, setRows] = useState<Response[]>([]);
+  const [rows, setRows]       = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
 
   async function load() {
-    setLoading(true);
-    setError("");
-    try {
-      setRows(await fetchResponses());
-    } catch {
-      setError("Could not load responses. Check that VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.");
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true); setError("");
+    try { setRows(await fetchResponses()); }
+    catch { setError("Could not load responses. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."); }
+    finally { setLoading(false); }
   }
-
   useEffect(() => { load(); }, []);
 
   async function handleDelete(id: string) {
@@ -370,25 +439,18 @@ export function ResultsApp() {
   const a = rows.filter(r => r.variant === "a");
   const b = rows.filter(r => r.variant === "b");
 
-  // Chart data
-  const timeBucketsA = (() => {
-    const map: Record<string, number> = {};
-    TIME_BUCKETS.forEach(k => (map[k] = 0));
-    a.forEach(r => { const ms = taskDurationMs(r); if (ms !== null) map[timeBucket(ms)]++; });
-    return TIME_BUCKETS.map(k => ({ label: k, count: map[k] }));
-  })();
-  const timeBucketsB = (() => {
-    const map: Record<string, number> = {};
-    TIME_BUCKETS.forEach(k => (map[k] = 0));
-    b.forEach(r => { const ms = taskDurationMs(r); if (ms !== null) map[timeBucket(ms)]++; });
-    return TIME_BUCKETS.map(k => ({ label: k, count: map[k] }));
-  })();
+  const pctA = completionPct(a);
+  const pctB = completionPct(b);
+  const npsA = avgNPS(a);
+  const npsB = avgNPS(b);
+  const msA  = meanMs(a);
+  const msB  = meanMs(b);
 
   const learnabilityA = countByKey(a, r => r.q1, LEARNABILITY_OPTIONS).map(d => ({ ...d, label: LEARNABILITY_SHORT[d.label] ?? d.label }));
   const learnabilityB = countByKey(b, r => r.q1, LEARNABILITY_OPTIONS).map(d => ({ ...d, label: LEARNABILITY_SHORT[d.label] ?? d.label }));
-  const usageA = countByKey(a, r => r.q7, USAGE_INTENT_OPTIONS).map(d => ({ ...d, label: USAGE_SHORT[d.label] ?? d.label }));
-  const usageB = countByKey(b, r => r.q7, USAGE_INTENT_OPTIONS).map(d => ({ ...d, label: USAGE_SHORT[d.label] ?? d.label }));
-  const ageData = countByKey(rows, r => r.age_range, AGE_RANGE_KEYS);
+  const usageA  = countByKey(a, r => r.q7, USAGE_OPTIONS).map(d => ({ ...d, label: USAGE_SHORT[d.label] ?? d.label }));
+  const usageB  = countByKey(b, r => r.q7, USAGE_OPTIONS).map(d => ({ ...d, label: USAGE_SHORT[d.label] ?? d.label }));
+  const ageData = countByKey(rows, r => r.age_range,  AGE_RANGE_KEYS);
   const profData = countByKey(rows, r => r.profession, PROFESSION_KEYS);
 
   const qualQuestions: { key: keyof Response; label: string }[] = [
@@ -399,130 +461,128 @@ export function ResultsApp() {
     { key: "q6", label: "Q6 — Desired features" },
   ];
 
-  const shell: React.CSSProperties = {
-    minHeight: "100vh", background: "var(--app-outer-bg, #F5F5F7)",
-    padding: "40px 24px", fontFamily: "'DM Sans', sans-serif",
-  };
-  const container: React.CSSProperties = { maxWidth: "960px", margin: "0 auto" };
-  const sectionTitle: React.CSSProperties = { fontSize: "16px", fontWeight: 700, color: "var(--app-text-primary)", marginBottom: "14px" };
-  const card: React.CSSProperties = { background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "14px", padding: "20px 22px" };
-
   return (
-    <div style={shell}>
-      <div style={container}>
+    <div style={{ minHeight: "100vh", background: PAGE, fontFamily: "'DM Sans', sans-serif" }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        tbody tr:hover { background: #F0F4FF !important; }
+      `}</style>
 
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "32px", flexWrap: "wrap", gap: "12px" }}>
+      {/* ── Sticky header ── */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 10,
+        background: CARD, borderBottom: `1px solid ${BORDER}`,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+      }}>
+        <div style={{ maxWidth: "960px", margin: "0 auto", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
           <div>
-            <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--app-text-primary)" }}>A/B Test Results</h1>
-            <p style={{ fontSize: "13px", color: "var(--app-text-muted)", marginTop: "2px" }}>
-              {rows.length} response{rows.length !== 1 ? "s" : ""} · {a.length} Version A · {b.length} Version B
+            <h1 style={{ fontSize: "17px", fontWeight: 700, color: DARK, margin: 0, lineHeight: 1.2 }}>A/B Test Results</h1>
+            <p style={{ fontSize: "12px", color: MUTED, margin: "3px 0 0" }}>
+              Subscriptions Management App &nbsp;·&nbsp;
+              {rows.length} response{rows.length !== 1 ? "s" : ""} &nbsp;·&nbsp;
+              <span style={{ color: A, fontWeight: 600 }}>{a.length} Version A</span>
+              &nbsp;·&nbsp;
+              <span style={{ color: B, fontWeight: 600 }}>{b.length} Version B</span>
             </p>
           </div>
-          <button onClick={load} style={{ padding: "8px 16px", borderRadius: "10px", border: "1px solid var(--app-border)", background: "var(--app-card)", cursor: "pointer", fontSize: "13px", fontWeight: 600, color: "var(--app-text-primary)", fontFamily: "'DM Sans', sans-serif" }}>
+          <button onClick={load} style={{
+            padding: "7px 14px", borderRadius: "8px",
+            border: `1px solid ${BORDER}`, background: CARD,
+            cursor: "pointer", fontSize: "12px", fontWeight: 600,
+            color: MID, fontFamily: "'DM Sans', sans-serif",
+            display: "flex", alignItems: "center", gap: "5px",
+          }}>
             ↻ Refresh
           </button>
         </div>
+      </div>
 
-        {error && <p style={{ color: "var(--app-red)", marginBottom: "24px", fontSize: "14px" }}>{error}</p>}
-        {loading && <p style={{ color: "var(--app-text-muted)", fontSize: "14px" }}>Loading…</p>}
+      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "28px 24px" }}>
 
-        {!loading && (
+        {error && (
+          <div style={{ background: RED_BG, border: `1px solid #FECACA`, borderRadius: "10px", padding: "12px 16px", marginBottom: "24px", fontSize: "13px", color: RED }}>
+            {error}
+          </div>
+        )}
+
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", padding: "80px 0" }}>
+            <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: `3px solid ${BORDER}`, borderTopColor: A, animation: "spin 0.7s linear infinite" }} />
+            <p style={{ fontSize: "13px", color: MUTED, margin: 0 }}>Loading responses…</p>
+          </div>
+        )}
+
+        {!loading && rows.length === 0 && !error && (
+          <div style={{ textAlign: "center", padding: "80px 0" }}>
+            <p style={{ fontSize: "36px", marginBottom: "14px" }}>📭</p>
+            <p style={{ fontSize: "16px", fontWeight: 600, color: MID, marginBottom: "6px" }}>No responses yet</p>
+            <p style={{ fontSize: "13px", color: MUTED }}>Share the survey link to start collecting data.</p>
+          </div>
+        )}
+
+        {!loading && rows.length > 0 && (
           <>
-            {/* ── Overview stats ── */}
-            <div style={{ display: "flex", gap: "12px", marginBottom: "32px", flexWrap: "wrap" }}>
-              <StatCard label="Version A" value={String(a.length)} sub={`NPS: ${avgNPS(a)}`} />
-              <StatCard label="Version B" value={String(b.length)} sub={`NPS: ${avgNPS(b)}`} />
-              <StatCard label="Avg task time A" value={meanDuration(a, totalTaskDurationMs)} sub={`${a.filter(r => totalTaskDurationMs(r) !== null).length} timed`} />
-              <StatCard label="Avg task time B" value={meanDuration(b, totalTaskDurationMs)} sub={`${b.filter(r => totalTaskDurationMs(r) !== null).length} timed`} />
-            </div>
+            {/* ── Summary ── */}
+            <Section title="Summary">
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                {([
+                  { label: "Task completion", valA: pctA !== null ? `${pctA}%` : "—", valB: pctB !== null ? `${pctB}%` : "—", winB: pctB !== null && pctA !== null && pctB > pctA },
+                  { label: "Avg NPS", valA: npsA !== null ? npsA.toFixed(1) : "—", valB: npsB !== null ? npsB.toFixed(1) : "—", winB: npsB !== null && npsA !== null && npsB > npsA },
+                  { label: "Avg total time", valA: msA !== null ? fmt(msA) : "—", valB: msB !== null ? fmt(msB) : "—", winB: msB !== null && msA !== null && msB < msA },
+                ]).map(({ label, valA, valB, winB }) => (
+                  <Card key={label} style={{ padding: "16px 18px" }}>
+                    <p style={{ fontSize: "10px", fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>{label}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                      {([["a", valA, !winB] as const, ["b", valB, winB] as const]).map(([ver, val, isWin]) => (
+                        <div key={ver} style={{
+                          padding: "10px 12px", borderRadius: "10px",
+                          background: isWin ? (ver === "a" ? A_SOFT : B_SOFT) : SURF,
+                          border: `1px solid ${isWin ? (ver === "a" ? A_BG : B_BG) : BORDER}`,
+                        }}>
+                          <p style={{ fontSize: "10px", fontWeight: 700, color: ver === "a" ? A : B, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                            Ver {ver.toUpperCase()}{isWin ? " ↑" : ""}
+                          </p>
+                          <p style={{ fontSize: "20px", fontWeight: 700, color: DARK, fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{val}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Section>
 
             {/* ── Task completion ── */}
-            {rows.length > 0 && (
-              <>
-                <h2 style={sectionTitle}>Task completion</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "32px" }}>
-                  {TASK_LABELS.map((label, i) => {
-                    const sA = taskStats(a, i);
-                    const sB = taskStats(b, i);
-                    return (
-                      <div key={i} style={card}>
-                        <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px" }}>{label}</p>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                          {([["a", sA, "#1D4ED8"], ["b", sB, "#7C3AED"]] as const).map(([ver, s, col]) => (
-                            <div key={ver}>
-                              <p style={{ fontSize: "11px", fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "6px" }}>Version {ver.toUpperCase()}</p>
-                              <p style={{ fontSize: "26px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{s.rate}</p>
-                              <p style={{ fontSize: "11px", color: "var(--app-text-muted)", marginTop: "4px" }}>
-                                completed{s.n > 0 ? ` · avg ${s.avgDur}` : ""}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-
-            {/* ── NPS ── */}
-            {rows.length > 0 && (
-              <>
-                <h2 style={sectionTitle}>NPS — Recommendation likelihood</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "32px" }}>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px" }}>Version A</p>
-                    <NPSBar rows={a} />
-                  </div>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "12px" }}>Version B</p>
-                    <NPSBar rows={b} />
-                  </div>
-                </div>
-
-                {/* ── Task timing ── */}
-                <h2 style={sectionTitle}>Task timing</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "32px" }}>
-                  {TASK_LABELS.map((label, i) => (
-                    <div key={i} style={card}>
-                      <p style={{ fontSize: "11px", fontWeight: 700, color: "var(--app-text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
-                        {label}
-                      </p>
+            <Section title="Task completion">
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {TASK_LABELS.map((label, i) => {
+                  const sA = taskStats(a, i);
+                  const sB = taskStats(b, i);
+                  return (
+                    <Card key={i} style={{ padding: "16px 20px" }}>
+                      <p style={{ fontSize: "11px", fontWeight: 600, color: MUTED, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>{label}</p>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-                        {(["a", "b"] as const).map(ver => {
-                          const varRows = (ver === "a" ? a : b).map(r => ({
-                            name: r.participant_name ?? "—",
-                            ms: perTaskDurationMs(r, i),
-                            result: r[TASK_RESULT_KEYS[i]],
-                          }));
-                          const col = ver === "a" ? "#1D4ED8" : "#7C3AED";
-                          const validMs = varRows.map(p => p.ms).filter((d): d is number => d !== null);
-                          const avg = validMs.length
-                            ? formatDuration(validMs.reduce((s, d) => s + d, 0) / validMs.length)
-                            : "—";
+                        {([["a", sA] as const, ["b", sB] as const]).map(([ver, s]) => {
+                          const col    = ver === "a" ? A : B;
+                          const allDone = s.attempted > 0 && s.completed === s.attempted;
                           return (
-                            <div key={ver}>
-                              <p style={{ fontSize: "11px", fontWeight: 700, color: col, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
-                                Version {ver.toUpperCase()}
-                              </p>
-                              <p style={{ fontSize: "22px", fontWeight: 700, color: "var(--app-text-primary)", fontFamily: "'DM Mono', monospace", marginBottom: "10px" }}>
-                                {avg}
-                              </p>
-                              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                                {varRows.map(p => {
-                                  const done = p.result === "completed";
-                                  const failed = p.result === "failed";
-                                  const resultColor = done ? "#059669" : failed ? "#EF4444" : "var(--app-text-muted)";
+                            <div key={ver} style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+                              <div style={{ textAlign: "center" }}>
+                                <VerLabel ver={ver} />
+                                <p style={{ fontSize: "30px", fontWeight: 700, fontFamily: "'DM Mono', monospace", lineHeight: 1, color: allDone ? GREEN : s.completed === 0 ? RED : DARK }}>
+                                  {s.rate}
+                                </p>
+                              </div>
+                              <div style={{ paddingTop: "16px" }}>
+                                {s.n > 0 && <p style={{ fontSize: "11px", color: MUTED, marginBottom: "6px" }}>avg {s.avgDur}</p>}
+                                {(ver === "a" ? a : b).map(r => {
+                                  const res = r[TASK_RESULT_KEYS[i]];
+                                  const ms  = perTaskDurationMs(r, i);
+                                  const done = res === "completed";
                                   return (
-                                    <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
-                                      <span style={{ color: resultColor, fontWeight: 700, width: "12px", flexShrink: 0 }}>
-                                        {done ? "✓" : failed ? "✗" : "·"}
-                                      </span>
-                                      <span style={{ color: "var(--app-text-secondary)", minWidth: "56px" }}>{p.name}</span>
-                                      <span style={{ color: "var(--app-text-muted)", fontFamily: "'DM Mono', monospace" }}>
-                                        {p.ms !== null ? formatDuration(p.ms) : "—"}
-                                      </span>
+                                    <div key={r.id} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: MUTED, marginBottom: "3px" }}>
+                                      <ResultDot result={res} />
+                                      <span style={{ color: MID }}>{r.participant_name ?? "?"}</span>
+                                      {ms !== null && <span style={{ fontFamily: "'DM Mono', monospace" }}>{fmt(ms)}</span>}
                                     </div>
                                   );
                                 })}
@@ -531,128 +591,203 @@ export function ResultsApp() {
                           );
                         })}
                       </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </Section>
+
+            {/* ── NPS ── */}
+            <Section title="NPS — Recommendation likelihood">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                {(["a", "b"] as const).map(ver => (
+                  <Card key={ver}>
+                    <VerLabel ver={ver} />
+                    <NPSBar rows={ver === "a" ? a : b} />
+                  </Card>
+                ))}
+              </div>
+            </Section>
+
+            {/* ── Task timing ── */}
+            <Section title="Task timing">
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {TASK_LABELS.map((label, i) => (
+                  <Card key={i} style={{ padding: "16px 20px" }}>
+                    <p style={{ fontSize: "11px", fontWeight: 600, color: MUTED, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>{label}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                      {(["a", "b"] as const).map(ver => {
+                        const vRows = (ver === "a" ? a : b).map(r => ({
+                          name: r.participant_name ?? "—",
+                          ms:   perTaskDurationMs(r, i),
+                          result: r[TASK_RESULT_KEYS[i]],
+                        }));
+                        const valid = vRows.map(p => p.ms).filter((d): d is number => d !== null);
+                        const avg   = valid.length ? fmt(valid.reduce((s, d) => s + d, 0) / valid.length) : "—";
+                        return (
+                          <div key={ver}>
+                            <VerLabel ver={ver} />
+                            <p style={{ fontSize: "24px", fontWeight: 700, color: DARK, fontFamily: "'DM Mono', monospace", marginBottom: "10px" }}>{avg}</p>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                              {vRows.map(p => (
+                                <div key={p.name} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                                  <ResultDot result={p.result ?? null} />
+                                  <span style={{ color: MID, minWidth: "52px" }}>{p.name}</span>
+                                  <span style={{ color: MUTED, fontFamily: "'DM Mono', monospace" }}>
+                                    {p.ms !== null ? fmt(p.ms) : "—"}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  </Card>
+                ))}
+              </div>
+            </Section>
 
-                {/* ── Learnability ── */}
-                <h2 style={sectionTitle}>Q1 — Learnability</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "32px" }}>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Version A</p>
-                    <BarChart data={learnabilityA} color="#1D4ED8" />
-                  </div>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Version B</p>
-                    <BarChart data={learnabilityB} color="#7C3AED" />
-                  </div>
-                </div>
+            {/* ── Quantitative ── */}
+            <Section title="Quantitative responses">
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {[
+                  { label: "Q1 — How was your experience of finding information you needed?", dataA: learnabilityA, dataB: learnabilityB },
+                  { label: "Q7 — How often would you realistically open an app like this?",  dataA: usageA,        dataB: usageB },
+                ].map(({ label, dataA, dataB }) => (
+                  <Card key={label}>
+                    <p style={{ fontSize: "13px", fontWeight: 600, color: MID, marginBottom: "16px" }}>{label}</p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                      {(["a", "b"] as const).map(ver => (
+                        <div key={ver}>
+                          <VerLabel ver={ver} />
+                          <BarChart data={ver === "a" ? dataA : dataB} color={ver === "a" ? A : B} />
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Section>
 
-                {/* ── Usage intent ── */}
-                <h2 style={sectionTitle}>Q7 — Usage intent</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "32px" }}>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#1D4ED8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Version A</p>
-                    <BarChart data={usageA} color="#1D4ED8" />
-                  </div>
-                  <div style={card}>
-                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#7C3AED", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>Version B</p>
-                    <BarChart data={usageB} color="#7C3AED" />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {/* ── Response table ── */}
-            <h2 style={sectionTitle}>Responses</h2>
-            <div style={{ background: "var(--app-card)", border: "1px solid var(--app-border)", borderRadius: "16px", overflow: "hidden", marginBottom: "32px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                <thead>
-                  <tr style={{ background: "var(--app-surface)" }}>
-                    {["Time", "Name", "Ver", "Duration", "NPS", "Learnability", "Age", "Profession"].map(h => (
-                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontWeight: 600, color: "var(--app-text-muted)", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "1px solid var(--app-border)", whiteSpace: "nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.length === 0 && (
-                    <tr><td colSpan={8} style={{ padding: "24px", textAlign: "center", color: "var(--app-text-muted)" }}>No responses yet.</td></tr>
-                  )}
-                  {rows.map(r => {
-                    const dur = totalTaskDurationMs(r);
-                    const isExpanded = expanded === r.id;
-                    return (
-                      <>
-                        <tr
-                          key={r.id}
-                          onClick={() => setExpanded(isExpanded ? null : r.id)}
-                          style={{ cursor: "pointer", borderBottom: isExpanded ? "none" : "1px solid var(--app-border)", background: isExpanded ? "var(--app-surface)" : "transparent" }}
-                        >
-                          <td style={{ padding: "10px 14px", color: "var(--app-text-muted)", whiteSpace: "nowrap" }}>{fmtTime(r.created_at)}</td>
-                          <td style={{ padding: "10px 14px", fontWeight: 500, color: "var(--app-text-primary)" }}>{r.participant_name ?? "—"}</td>
-                          <td style={{ padding: "10px 14px" }}>
-                            <span style={{ padding: "2px 8px", borderRadius: "999px", fontSize: "11px", fontWeight: 700, background: r.variant === "a" ? "#DBEAFE" : "#EDE9FE", color: r.variant === "a" ? "#1D4ED8" : "#7C3AED" }}>
-                              {r.variant.toUpperCase()}
-                            </span>
-                          </td>
-                          <td style={{ padding: "10px 14px", fontFamily: "'DM Mono', monospace", color: "var(--app-text-secondary)" }}>{dur !== null ? formatDuration(dur) : "—"}</td>
-                          <td style={{ padding: "10px 14px", textAlign: "center", fontFamily: "'DM Mono', monospace" }}>{r.nps !== null && r.nps !== undefined ? r.nps : "—"}</td>
-                          <td style={{ padding: "10px 14px", color: "var(--app-text-secondary)", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {r.q1 ? (LEARNABILITY_SHORT[r.q1] ?? r.q1) : "—"}
-                          </td>
-                          <td style={{ padding: "10px 14px", color: "var(--app-text-secondary)", whiteSpace: "nowrap" }}>{r.age_range ?? "—"}</td>
-                          <td style={{ padding: "10px 14px", color: "var(--app-text-secondary)", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.profession ?? "—"}</td>
-                        </tr>
-                        {isExpanded && (
-                          <tr key={`${r.id}-exp`} style={{ borderBottom: "1px solid var(--app-border)" }}>
-                            <td colSpan={8} style={{ padding: 0 }}>
-                              <UserDetail r={r} onDelete={handleDelete} />
+            {/* ── Responses table ── */}
+            <Section title="Responses">
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+                  <thead>
+                    <tr style={{ background: SURF }}>
+                      {["Name", "Ver", "T1", "T2", "T3", "Total", "NPS", "Learnability"].map(h => (
+                        <th key={h} style={{
+                          padding: "10px 14px", textAlign: "left",
+                          fontWeight: 600, color: MUTED,
+                          fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.06em",
+                          borderBottom: `1px solid ${BORDER}`, whiteSpace: "nowrap",
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r, idx) => {
+                      const totalMs   = totalTaskDurationMs(r);
+                      const isExpanded = expanded === r.id;
+                      return (
+                        <>
+                          <tr
+                            key={r.id}
+                            onClick={() => setExpanded(isExpanded ? null : r.id)}
+                            style={{
+                              cursor: "pointer",
+                              borderBottom: isExpanded ? "none" : `1px solid ${BORDER}`,
+                              background: isExpanded ? "#F0F4FF" : idx % 2 === 0 ? CARD : SURF,
+                            }}
+                          >
+                            <td style={{ padding: "11px 14px", fontWeight: 600, color: DARK }}>
+                              {r.participant_name ?? "—"}
+                            </td>
+                            <td style={{ padding: "11px 14px" }}><VerPill ver={r.variant} /></td>
+                            {TASK_RESULT_KEYS.map((k, i) => {
+                              const res = r[k];
+                              const ms  = perTaskDurationMs(r, i);
+                              return (
+                                <td key={k} style={{ padding: "11px 14px" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                                    <ResultDot result={res ?? null} />
+                                    {ms !== null && (
+                                      <span style={{ fontSize: "11px", color: MUTED, fontFamily: "'DM Mono', monospace" }}>{fmt(ms)}</span>
+                                    )}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                            <td style={{ padding: "11px 14px", fontFamily: "'DM Mono', monospace", fontSize: "12px", color: MID }}>
+                              {totalMs !== null ? fmt(totalMs) : "—"}
+                            </td>
+                            <td style={{ padding: "11px 14px", fontFamily: "'DM Mono', monospace", fontWeight: 700, color: DARK }}>
+                              {r.nps !== null && r.nps !== undefined ? r.nps : "—"}
+                            </td>
+                            <td style={{ padding: "11px 14px", color: MID, maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {r.q1 ? (LEARNABILITY_SHORT[r.q1] ?? r.q1) : "—"}
                             </td>
                           </tr>
-                        )}
-                      </>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {isExpanded && (
+                            <tr key={`${r.id}-exp`} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                              <td colSpan={8} style={{ padding: 0 }}>
+                                <UserDetail r={r} onDelete={handleDelete} />
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </Card>
+            </Section>
 
             {/* ── Participants ── */}
-            {rows.length > 0 && (
-              <>
-                <h2 style={sectionTitle}>Participants</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "32px" }}>
-                  <div style={card}>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-muted)", marginBottom: "12px" }}>Age range</p>
-                    <BarChart data={ageData} color="var(--app-blue)" />
-                  </div>
-                  <div style={card}>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-muted)", marginBottom: "12px" }}>Profession</p>
-                    <ProfessionList data={profData} />
-                  </div>
-                </div>
+            <Section title="Participants">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                <Card>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: MID, marginBottom: "12px" }}>Age range</p>
+                  <BarChart data={ageData} color={A} />
+                </Card>
+                <Card>
+                  <p style={{ fontSize: "13px", fontWeight: 600, color: MID, marginBottom: "12px" }}>Profession</p>
+                  <ProfessionList data={profData} />
+                </Card>
+              </div>
+            </Section>
 
-                {/* ── Qualitative ── */}
-                <h2 style={sectionTitle}>Qualitative responses</h2>
+            {/* ── Qualitative responses ── */}
+            <Section title="Qualitative responses">
+              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
                 {qualQuestions.map(({ key, label }) => (
-                  <div key={key} style={{ marginBottom: "28px" }}>
-                    <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-muted)", marginBottom: "10px" }}>{label}</p>
+                  <div key={String(key)}>
+                    <div style={{ marginBottom: "10px" }}>
+                      <p style={{ fontSize: "13px", fontWeight: 600, color: MID, margin: 0 }}>{label}</p>
+                      {QUAL_QUESTION_TEXT[key] && (
+                        <p style={{ fontSize: "12px", color: MUTED, margin: "3px 0 0", fontStyle: "italic" }}>
+                          {QUAL_QUESTION_TEXT[key]}
+                        </p>
+                      )}
+                    </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                      <div>
-                        <p style={{ fontSize: "11px", fontWeight: 700, color: "#1D4ED8", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Version A</p>
-                        {a.map(r => <QualCard key={r.id} name={r.participant_name ?? "—"} text={r[key] as string | null} variant="a" />)}
-                        {a.every(r => !r[key]) && <p style={{ fontSize: "13px", color: "var(--app-text-muted)" }}>No responses yet.</p>}
-                      </div>
-                      <div>
-                        <p style={{ fontSize: "11px", fontWeight: 700, color: "#7C3AED", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Version B</p>
-                        {b.map(r => <QualCard key={r.id} name={r.participant_name ?? "—"} text={r[key] as string | null} variant="b" />)}
-                        {b.every(r => !r[key]) && <p style={{ fontSize: "13px", color: "var(--app-text-muted)" }}>No responses yet.</p>}
-                      </div>
+                      {(["a", "b"] as const).map(ver => (
+                        <div key={ver}>
+                          <p style={{ fontSize: "10px", fontWeight: 700, color: ver === "a" ? A : B, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "8px" }}>
+                            Version {ver.toUpperCase()}
+                          </p>
+                          {(ver === "a" ? a : b).map(r => (
+                            <QualCard key={r.id} name={r.participant_name ?? "—"} text={r[key] as string | null} ver={ver} />
+                          ))}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ))}
-              </>
-            )}
+              </div>
+            </Section>
+
           </>
         )}
       </div>
