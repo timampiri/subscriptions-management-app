@@ -184,7 +184,7 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
 
       {/* Upcoming renewals */}
       {upcoming.length > 0 && (
-        <div style={{ padding: "0 20px 16px" }}>
+        <div style={{ padding: "0 20px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
             <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-muted)", letterSpacing: "0.02em", textTransform: "uppercase" }}>
               Renewals This Week
@@ -208,27 +208,6 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
           </div>
         </div>
       )}
-
-      {/* Recent subscriptions */}
-      <div style={{ padding: "0 20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--app-text-muted)", letterSpacing: "0.02em", textTransform: "uppercase" }}>
-            All Subscriptions
-          </span>
-          <button onClick={() => onNavigate("subscriptions")} style={{ fontSize: "12px", color: "var(--app-blue)", background: "none", border: "none", cursor: "pointer" }}>
-            View all
-          </button>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {SUBSCRIPTIONS.filter(s => s.status === "active").slice(0, 4).map((sub) => (
-            <SubscriptionCard
-              key={sub.id}
-              sub={sub}
-              onClick={() => onSelectSubscription(sub.id)}
-            />
-          ))}
-        </div>
-      </div>
 
       {/* Account subscriptions sheet */}
       {selectedAccount && (
