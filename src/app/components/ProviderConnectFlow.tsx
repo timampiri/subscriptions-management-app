@@ -611,7 +611,7 @@ function ResultsStep({
                         fontSize: "10px", fontWeight: 700,
                       }}
                     >
-                      {confidenceLabel(sub.confidence)} <Info size={10} />
+                      {sub.confidence}% match <Info size={10} />
                     </button>
                     <div style={{ flex: 1 }} />
                     <button
@@ -1100,7 +1100,7 @@ function DetectedDetail({
               background: confidenceBg(sub.confidence), color: confidenceFg(sub.confidence),
               border: "none", cursor: "pointer",
             }}>
-              {confidenceLabel(sub.confidence)} · {sub.confidence}% <Info size={11} />
+              {sub.confidence}% match <Info size={11} />
             </button>
           )}
         </div>
@@ -1515,11 +1515,7 @@ function confidenceFg(c: number) {
   if (c >= 60) return "var(--app-yellow)";
   return "var(--app-red)";
 }
-function confidenceLabel(c: number) {
-  if (c >= 80) return "Very likely";
-  if (c >= 60) return "Probably";
-  return "Not sure";
-}
+
 
 function fmtDate(iso: string) {
   const d = new Date(iso);
