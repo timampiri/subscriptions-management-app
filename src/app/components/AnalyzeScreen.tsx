@@ -4,10 +4,11 @@ import { InsightsScreen } from "./InsightsScreen";
 
 interface AnalyzeScreenProps {
   onSelectSubscription: (id: string) => void;
+  initialTab?: "stats" | "insights";
 }
 
-export function AnalyzeScreen({ onSelectSubscription }: AnalyzeScreenProps) {
-  const [tab, setTab] = useState<"stats" | "insights">("stats");
+export function AnalyzeScreen({ onSelectSubscription, initialTab = "stats" }: AnalyzeScreenProps) {
+  const [tab, setTab] = useState<"stats" | "insights">(initialTab);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>

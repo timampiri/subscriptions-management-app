@@ -22,10 +22,12 @@ export default function App() {
   const [subsFilterOpen, setSubsFilterOpen] = useState(false);
   const [subsInitialUsageFilter, setSubsInitialUsageFilter] = useState<string | null>(null);
   const [dark, setDark] = useState(false);
+  const [analyzeInitialTab, setAnalyzeInitialTab] = useState<"stats" | "insights">("stats");
 
   const goTo = (s: Screen) => {
     setPrevScreen(screen);
     const target = variantB && (s === "stats" || s === "insights") ? "analyze" : s;
+    if (s === "insights" || s === "stats") setAnalyzeInitialTab(s as "stats" | "insights");
     if (target !== "subscriptions") setSubsInitialUsageFilter(null);
     setScreen(target);
   };
@@ -124,7 +126,7 @@ export default function App() {
             <InsightsScreen onSelectSubscription={id => setSelectedSubscriptionId(id)} />
           )}
           {screen === "stats" && <StatsScreen />}
-          {screen === "analyze" && <AnalyzeScreen onSelectSubscription={id => setSelectedSubscriptionId(id)} />}
+          {screen === "analyze" && <AnalyzeScreen onSelectSubscription={id => setSelectedSubscriptionId(id)} initialTab={analyzeInitialTab} />}
           {screen === "add" && <AddScreen onBack={() => setScreen(prevScreen)} onConnectNew={() => setConnecting(true)} />}
           {screen === "profile" && <ProfileScreen onConnectNew={() => setConnecting(true)} />}
 
