@@ -27,6 +27,8 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
   const monthly = totalMonthly(SUBSCRIPTIONS);
   const upcoming = ALERTS.filter((a) => a.daysUntil <= 7);
 
+  const variantB = new URLSearchParams(window.location.search).get("v") === "b";
+
   const T = {
     ff: "'DM Sans', sans-serif",
     mono: "'DM Mono', monospace",
@@ -45,17 +47,19 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
           </h1>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <button
-            onClick={() => onNavigate("add")}
-            style={{
-              display: "flex", alignItems: "center", gap: "4px", padding: "8px 12px", borderRadius: "999px",
-              background: "var(--app-blue)", color: "#fff", border: "none", cursor: "pointer",
-              fontSize: "12px", fontWeight: 600, boxShadow: "0 4px 12px var(--app-blue-glow)",
-            }}
-          >
-            <Plus size={14} strokeWidth={2.5} />
-            Add
-          </button>
+          {!variantB && (
+            <button
+              onClick={() => onNavigate("add")}
+              style={{
+                display: "flex", alignItems: "center", gap: "4px", padding: "8px 12px", borderRadius: "999px",
+                background: "var(--app-blue)", color: "#fff", border: "none", cursor: "pointer",
+                fontSize: "12px", fontWeight: 600, boxShadow: "0 4px 12px var(--app-blue-glow)",
+              }}
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Add
+            </button>
+          )}
           <button
             onClick={() => setAlertsSeen(true)}
             style={{

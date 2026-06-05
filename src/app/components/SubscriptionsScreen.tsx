@@ -203,6 +203,7 @@ function CalendarView({ subs, onSelect }: { subs: Subscription[]; onSelect: (id:
 }
 
 export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initialUsageFilter }: SubscriptionsScreenProps) {
+  const variantB = new URLSearchParams(window.location.search).get("v") === "b";
   const [view, setView] = useState<"list" | "calendar">("list");
   const [search, setSearch] = useState("");
   const [categories, setCategories] = useState<Set<string>>(new Set());
@@ -249,17 +250,19 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
       <div style={{ padding: "24px 20px 12px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
           <h2 style={{ fontSize: "22px", fontWeight: 700, color: "var(--app-text-primary)" }}>Subscriptions</h2>
-          <button
-            onClick={onAdd}
-            style={{
-              display: "flex", alignItems: "center", gap: "4px", padding: "8px 12px", borderRadius: "999px",
-              background: "var(--app-blue)", color: "#fff", border: "none", cursor: "pointer",
-              fontSize: "12px", fontWeight: 600, boxShadow: "0 4px 12px var(--app-blue-glow)",
-            }}
-          >
-            <Plus size={14} strokeWidth={2.5} />
-            Add
-          </button>
+          {!variantB && (
+            <button
+              onClick={onAdd}
+              style={{
+                display: "flex", alignItems: "center", gap: "4px", padding: "8px 12px", borderRadius: "999px",
+                background: "var(--app-blue)", color: "#fff", border: "none", cursor: "pointer",
+                fontSize: "12px", fontWeight: 600, boxShadow: "0 4px 12px var(--app-blue-glow)",
+              }}
+            >
+              <Plus size={14} strokeWidth={2.5} />
+              Add
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px", borderRadius: "14px", marginBottom: "12px", background: "var(--app-surface)" }}>

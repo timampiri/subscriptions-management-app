@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, X, Shield, Bell, Info, CheckCircle, ChevronDown, ChevronRight, Search as SearchIcon, Sparkles, Calendar, RefreshCw, Mail as MailIcon, Tag, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Check, X, Shield, Bell, Info, CheckCircle, ChevronDown, ChevronRight, Filter, Search as SearchIcon, Sparkles, Calendar, RefreshCw, Mail as MailIcon, Tag, Pencil, Trash2 } from "lucide-react";
 import { DETECTED_SUBSCRIPTIONS, DetectedSubscription } from "./data";
 import { SubscriptionEditForm } from "./SubscriptionEditForm";
 
@@ -337,6 +337,7 @@ function ResultsStep({
   const [activeTab, setActiveTab] = useState<"detected" | "saved" | "skipped">("detected");
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()); };
   const toggleSelect = (id: string) => {
@@ -371,6 +372,11 @@ function ResultsStep({
   const detectedCount = detectedRows.length;
   const savedCount = savedRows.length;
   const skippedCount = skippedRows.length;
+
+  const selectableIds = visible.filter(s => !s.alreadyTracked).map(s => s.id);
+  const allSelected = selectableIds.length > 0 && selectableIds.every(id => selectedIds.has(id));
+  const selectAll = () => setSelectedIds(new Set(selectableIds));
+  const deselectAll = () => setSelectedIds(new Set());
 
   const bulkAdd = () => {
     setAdded(prev => { const n = new Set(prev); selectedIds.forEach(id => n.add(id)); return n; });
@@ -466,9 +472,24 @@ function ResultsStep({
           })}
         </div>
 
-        {/* Toolbar — hidden when there's nothing meaningful to sort/select */}
+        {/* Toolbar */}
         {visible.length >= 2 && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+          {/* Select / Cancel — LEFT */}
+          <button
+            onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
+            style={{
+              padding: "6px 12px", borderRadius: "999px",
+              background: selectMode ? "var(--app-blue)" : "var(--app-card)",
+              color: selectMode ? "#fff" : "var(--app-text-primary)",
+              border: `1px solid ${selectMode ? "var(--app-blue)" : "var(--app-border)"}`,
+              fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: T.ff, flexShrink: 0,
+            }}
+          >
+            {selectMode ? "Cancel" : "Select"}
+          </button>
+
+          {/* Sort dropdown */}
           <div style={{ position: "relative" }}>
             <button onClick={() => setSortOpen(v => !v)} style={{
               display: "flex", alignItems: "center", gap: "4px",
@@ -503,38 +524,31 @@ function ResultsStep({
               </>
             )}
           </div>
-          {activeTab === "detected" && [
-            { key: "highConfidence" as FilterKey, label: "High confidence" },
-            { key: "newToApp" as FilterKey, label: "New to app" },
-            { key: "alreadyAdded" as FilterKey, label: "Already added" },
-          ].map(f => {
-            const on = filters.has(f.key);
-            return (
-              <button key={f.key} onClick={() => toggleFilter(f.key)} style={{
-                padding: "6px 10px", borderRadius: "999px",
-                background: on ? "var(--app-blue-bg)" : "var(--app-card)",
-                border: `1px solid ${on ? "var(--app-blue-border)" : "var(--app-border)"}`,
-                color: on ? "var(--app-blue-label)" : "var(--app-text-secondary)",
-                fontSize: "12px", fontWeight: 500, cursor: "pointer",
-              }}>
-                {f.label}
+
+          {/* Filter icon — RIGHT */}
+          {activeTab === "detected" && (
+            <div style={{ position: "relative", marginLeft: "auto" }}>
+              <button
+                onClick={() => setFilterOpen(true)}
+                style={{
+                  padding: "7px 9px", borderRadius: "12px", display: "flex", alignItems: "center",
+                  background: filters.size > 0 ? "var(--app-blue-bg)" : "var(--app-card)",
+                  border: `1px solid ${filters.size > 0 ? "var(--app-blue-border, var(--app-blue))" : "var(--app-border)"}`,
+                  cursor: "pointer",
+                }}
+              >
+                <Filter size={14} color={filters.size > 0 ? "var(--app-blue-label)" : "var(--app-text-muted)"} />
               </button>
-            );
-          })}
-          {visible.length > 0 && (
-            <button
-              onClick={() => setSelectMode(s => !s)}
-              style={{
-                marginLeft: "auto",
-                padding: "6px 12px", borderRadius: "999px",
-                background: selectMode ? "var(--app-blue)" : "var(--app-card)",
-                color: selectMode ? "#fff" : "var(--app-text-primary)",
-                border: `1px solid ${selectMode ? "var(--app-blue)" : "var(--app-border)"}`,
-                fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: T.ff,
-              }}
-            >
-              {selectMode ? "Cancel" : "Select"}
-            </button>
+              {filters.size > 0 && (
+                <span style={{
+                  position: "absolute", top: "-4px", right: "-4px",
+                  minWidth: "16px", height: "16px", padding: "0 4px",
+                  borderRadius: "999px", background: "var(--app-blue)", color: "#fff",
+                  fontSize: "10px", fontWeight: 700, fontFamily: T.mono,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>{filters.size}</span>
+              )}
+            </div>
           )}
         </div>
         )}
@@ -680,6 +694,17 @@ function ResultsStep({
           background: "var(--app-frame-bg)", borderTop: "1px solid var(--app-border)",
           display: "flex", gap: "8px", alignItems: "center",
         }}>
+          <button
+            onClick={allSelected ? deselectAll : selectAll}
+            style={{
+              padding: "6px 10px", borderRadius: "999px", flexShrink: 0,
+              background: "var(--app-surface)", border: "1px solid var(--app-border)",
+              fontSize: "12px", fontWeight: 600, color: "var(--app-text-primary)",
+              cursor: "pointer", fontFamily: T.ff,
+            }}
+          >
+            {allSelected ? "Deselect all" : "Select all"}
+          </button>
           <span style={{ fontSize: "12px", color: "var(--app-text-muted)", fontFamily: T.mono, flexShrink: 0 }}>
             {selectedIds.size} selected
           </span>
@@ -791,6 +816,60 @@ function ResultsStep({
               Skip
             </button>
           </div>
+        </Popover>
+      )}
+
+      {/* Filter popover */}
+      {filterOpen && (
+        <Popover onClose={() => setFilterOpen(false)}>
+          <p style={{ fontSize: "14px", fontWeight: 700, color: "var(--app-text-primary)", marginBottom: "12px" }}>Filter</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {([
+              { key: "highConfidence" as FilterKey, label: "High confidence", sub: "80%+ match score" },
+              { key: "newToApp" as FilterKey, label: "New to app", sub: "Not already tracked" },
+              { key: "alreadyAdded" as FilterKey, label: "Already added", sub: "Tracked in this session" },
+            ] as const).map(f => {
+              const on = filters.has(f.key);
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => toggleFilter(f.key)}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    padding: "12px 14px", borderRadius: "12px", border: "none",
+                    background: on ? "var(--app-blue-bg)" : "var(--app-surface)",
+                    cursor: "pointer", textAlign: "left", fontFamily: T.ff,
+                  }}
+                >
+                  <div>
+                    <p style={{ fontSize: "13px", fontWeight: 600, color: on ? "var(--app-blue-label)" : "var(--app-text-primary)", marginBottom: "2px" }}>{f.label}</p>
+                    <p style={{ fontSize: "11px", color: "var(--app-text-muted)" }}>{f.sub}</p>
+                  </div>
+                  <div style={{
+                    width: "20px", height: "20px", borderRadius: "50%", flexShrink: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    background: on ? "var(--app-blue)" : "transparent",
+                    border: `2px solid ${on ? "var(--app-blue)" : "var(--app-border)"}`,
+                  }}>
+                    {on && <Check size={11} color="#fff" strokeWidth={3} />}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {filters.size > 0 && (
+            <button
+              onClick={() => { setFilters(new Set()); setFilterOpen(false); }}
+              style={{
+                width: "100%", marginTop: "10px", padding: "10px", borderRadius: "10px",
+                background: "transparent", border: "1px solid var(--app-border)",
+                fontSize: "12px", fontWeight: 600, color: "var(--app-text-secondary)",
+                cursor: "pointer", fontFamily: T.ff,
+              }}
+            >
+              Clear all filters
+            </button>
+          )}
         </Popover>
       )}
 
