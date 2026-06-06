@@ -79,7 +79,7 @@ export function BottomNav({ active, onChange, variantB }: BottomNavProps) {
             position: "relative", zIndex: 1,
           }}
         >
-          <Plus size={22} color="#fff" strokeWidth={2.5} />
+          <Plus size={22} color="var(--app-on-accent)" strokeWidth={2.5} />
         </button>
         {NAV_B_RIGHT.map(item => (
           <NavButton key={item.id} id={item.id as Screen} icon={item.icon} label={item.label} isActive={active === item.id} onChange={onChange} />

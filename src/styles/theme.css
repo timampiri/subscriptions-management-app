@@ -94,6 +94,7 @@
   --app-trial-border: rgba(22, 51, 0, 0.18);
   --app-trial-tag-bg: #163300;
   --app-trial-tag-fg: #FFFFFF;
+  --app-on-accent: #ffffff;
 }
 
 .dark {
@@ -186,6 +187,7 @@
   --app-trial-border: rgba(159, 232, 112, 0.30);
   --app-trial-tag-bg: #9FE870;
   --app-trial-tag-fg: #0A1F00;
+  --app-on-accent: #0A1F00;
 }
 
 @theme inline {

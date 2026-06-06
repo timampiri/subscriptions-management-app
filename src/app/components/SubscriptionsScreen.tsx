@@ -301,7 +301,7 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
               onClick={onAdd}
               style={{
                 display: "flex", alignItems: "center", gap: "4px", padding: "8px 12px", borderRadius: "999px",
-                background: "var(--app-blue)", color: "#fff", border: "none", cursor: "pointer",
+                background: "var(--app-blue)", color: "var(--app-on-accent)", border: "none", cursor: "pointer",
                 fontSize: "12px", fontWeight: 600, boxShadow: "0 4px 12px var(--app-blue-glow)",
               }}
             >
@@ -320,7 +320,7 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
                 style={{
                   display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", borderRadius: "11px",
                   background: view === v ? "var(--app-blue)" : "transparent",
-                  fontSize: "12px", color: view === v ? "#fff" : "var(--app-text-muted)",
+                  fontSize: "12px", color: view === v ? "var(--app-on-accent)" : "var(--app-text-muted)",
                   fontWeight: view === v ? 600 : 400, border: "none", cursor: "pointer",
                   transition: "all 0.15s ease",
                 }}
@@ -343,7 +343,7 @@ export function SubscriptionsScreen({ onSelect, onAdd, onFilterOpenChange, initi
               <span style={{
                 position: "absolute", top: "-4px", right: "-4px",
                 minWidth: "16px", height: "16px", padding: "0 4px",
-                borderRadius: "999px", background: "var(--app-blue)", color: "#fff",
+                borderRadius: "999px", background: "var(--app-blue)", color: "var(--app-on-accent)",
                 fontSize: "10px", fontWeight: 700, fontFamily: "'DM Mono', monospace",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
@@ -653,7 +653,7 @@ function FilterSheet({
             onClick={onClose}
             style={{
               flex: 2, padding: "12px", borderRadius: "999px",
-              background: "var(--app-blue)", color: "#fff",
+              background: "var(--app-blue)", color: "var(--app-on-accent)",
               border: "none", cursor: "pointer",
               fontSize: "13px", fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
               boxShadow: "0 4px 12px var(--app-blue-glow)",

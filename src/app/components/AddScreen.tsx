@@ -291,7 +291,7 @@ export function AddScreen({ onBack, onConnectNew }: AddScreenProps) {
               border: "none", cursor: "pointer", transition: "all 0.2s ease",
             }}
           >
-            <span style={{ fontSize: "15px", fontWeight: 700, color: "#fff" }}>Add Subscription</span>
+            <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--app-on-accent)" }}>Add Subscription</span>
           </button>
         </div>
       )}
@@ -318,7 +318,7 @@ export function AddScreen({ onBack, onConnectNew }: AddScreenProps) {
             onClick={() => setTab("auto")}
             style={{
               padding: "10px 20px", borderRadius: "999px",
-              background: "var(--app-blue)", color: "#fff",
+              background: "var(--app-blue)", color: "var(--app-on-accent)",
               border: "none", cursor: "pointer",
               fontSize: "13px", fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
             }}

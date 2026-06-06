@@ -203,7 +203,7 @@ export function SubscriptionDetail({ subscriptionId, onClose }: SubscriptionDeta
               </button>
               <button
                 onClick={() => setStage("cancelled")}
-                style={{ flex: 1, padding: "12px 16px", borderRadius: "999px", background: "var(--app-red)", color: "#fff", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
+                style={{ flex: 1, padding: "12px 16px", borderRadius: "999px", background: "var(--app-red)", color: "var(--app-on-accent)", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}
               >
                 Yes, cancel
               </button>

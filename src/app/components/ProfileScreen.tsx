@@ -48,15 +48,15 @@ export function ProfileScreen({ onConnectNew }: ProfileScreenProps) {
             width: "56px", height: "56px", borderRadius: "50%",
             display: "flex", alignItems: "center", justifyContent: "center",
             background: "linear-gradient(135deg, var(--app-blue) 0%, #1F4A00 100%)",
-            color: "#fff", fontSize: "20px", fontWeight: 700, flexShrink: 0,
+            color: "var(--app-on-accent)", fontSize: "20px", fontWeight: 700, flexShrink: 0,
           }}>
             JM
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--app-text-primary)", lineHeight: 1.2 }}>
+            <p style={{ fontSize: "16px", fontWeight: 700, color: "var(--app-hero-label)", lineHeight: 1.2 }}>
               John Mercer
             </p>
-            <p style={{ fontSize: "12px", color: "var(--app-text-muted)", marginTop: "2px" }}>
+            <p style={{ fontSize: "12px", color: "var(--app-hero-label)", opacity: 0.65, marginTop: "2px" }}>
               john@gmail.com
             </p>
           </div>
@@ -78,12 +78,12 @@ export function ProfileScreen({ onConnectNew }: ProfileScreenProps) {
             : "var(--app-card)",
           border: currentPlan === "pro" ? "none" : "1px solid var(--app-border)",
           boxShadow: currentPlan === "pro" ? "0 8px 24px var(--app-blue-glow)" : "var(--app-card-shadow)",
-          color: currentPlan === "pro" ? "#fff" : "var(--app-text-primary)",
+          color: currentPlan === "pro" ? "var(--app-on-accent)" : "var(--app-text-primary)",
           position: "relative", overflow: "hidden",
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <Sparkles size={16} color={currentPlan === "pro" ? "#fff" : "var(--app-blue)"} />
+              <Sparkles size={16} color={currentPlan === "pro" ? "var(--app-on-accent)" : "var(--app-blue)"} />
               <p style={{ fontSize: "16px", fontWeight: 700, letterSpacing: "0.01em" }}>
                 {currentPlan === "pro" ? "Pro" : "Free"} plan
               </p>
@@ -92,7 +92,7 @@ export function ProfileScreen({ onConnectNew }: ProfileScreenProps) {
               padding: "3px 10px", borderRadius: "999px",
               fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase",
               background: currentPlan === "pro" ? "rgba(255,255,255,0.18)" : "var(--app-surface)",
-              color: currentPlan === "pro" ? "#fff" : "var(--app-text-muted)",
+              color: currentPlan === "pro" ? "var(--app-on-accent)" : "var(--app-text-muted)",
             }}>
               Current
             </span>
@@ -122,7 +122,7 @@ export function ProfileScreen({ onConnectNew }: ProfileScreenProps) {
             display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
             width: "100%", padding: "10px", borderRadius: "12px",
             background: currentPlan === "pro" ? "rgba(255,255,255,0.18)" : "var(--app-blue)",
-            color: "#fff", border: "none", cursor: "pointer",
+            color: "var(--app-on-accent)", border: "none", cursor: "pointer",
             fontSize: "13px", fontWeight: 600,
           }}>
             {currentPlan === "pro" ? "Manage plan" : "Upgrade to Pro"}

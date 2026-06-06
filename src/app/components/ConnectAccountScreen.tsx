@@ -148,7 +148,7 @@ export function ConnectAccountScreen({ onBack, onConnectComplete }: ConnectAccou
                           onClick={() => { setActiveMode("fresh"); setActiveProvider(p); }}
                           style={{
                             padding: "6px 12px", borderRadius: "999px",
-                            background: "var(--app-blue)", color: "#fff",
+                            background: "var(--app-blue)", color: "var(--app-on-accent)",
                             border: "none", cursor: "pointer",
                             fontSize: "12px", fontWeight: 600,
                           }}

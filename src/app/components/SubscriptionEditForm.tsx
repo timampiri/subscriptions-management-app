@@ -167,7 +167,7 @@ export function SubscriptionEditForm({
           onClick={() => onPrimary(form)}
           style={{
             flex: 2, padding: "12px 16px", borderRadius: "999px",
-            background: "var(--app-blue)", color: "#fff",
+            background: "var(--app-blue)", color: "var(--app-on-accent)",
             border: "none", cursor: "pointer",
             fontSize: "13px", fontWeight: 700, fontFamily: T.ff,
             boxShadow: "0 4px 12px var(--app-blue-glow)",

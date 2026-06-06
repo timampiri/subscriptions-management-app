@@ -52,7 +52,7 @@ export function HomeScreen({ onSelectSubscription, onNavigate, onConnectNew, onN
               onClick={() => onNavigate("add")}
               style={{
                 display: "flex", alignItems: "center", gap: "4px", padding: "8px 12px", borderRadius: "999px",
-                background: "var(--app-blue)", color: "#fff", border: "none", cursor: "pointer",
+                background: "var(--app-blue)", color: "var(--app-on-accent)", border: "none", cursor: "pointer",
                 fontSize: "12px", fontWeight: 600, boxShadow: "0 4px 12px var(--app-blue-glow)",
               }}
             >

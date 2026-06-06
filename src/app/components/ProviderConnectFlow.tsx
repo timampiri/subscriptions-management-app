@@ -510,7 +510,7 @@ function ResultsStep({
                 <span style={{
                   position: "absolute", top: "-4px", right: "-4px",
                   minWidth: "16px", height: "16px", padding: "0 4px",
-                  borderRadius: "999px", background: "var(--app-blue)", color: "#fff",
+                  borderRadius: "999px", background: "var(--app-blue)", color: "var(--app-on-accent)",
                   fontSize: "10px", fontWeight: 700, fontFamily: T.mono,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>{filters.size}</span>
@@ -628,7 +628,7 @@ function ResultsStep({
                       onClick={(e) => { e.stopPropagation(); handleAdd(sub.id); }}
                       style={{
                         padding: "6px 16px", borderRadius: "999px",
-                        background: "var(--app-blue)", color: "#fff",
+                        background: "var(--app-blue)", color: "var(--app-on-accent)",
                         border: "none", cursor: "pointer",
                         fontSize: "12px", fontWeight: 600,
                       }}
@@ -757,7 +757,7 @@ function ResultsStep({
             onClick={addAll}
             style={{
               padding: "10px 20px", borderRadius: "999px",
-              background: "var(--app-blue)", color: "#fff",
+              background: "var(--app-blue)", color: "var(--app-on-accent)",
               border: "none", cursor: "pointer",
               fontSize: "13px", fontWeight: 700, fontFamily: T.ff,
               boxShadow: "0 4px 12px var(--app-blue-glow)",
@@ -1003,7 +1003,7 @@ function EmptyShell({
       {buttonLabel && onButtonClick && (
         <button onClick={onButtonClick} style={{
           padding: "8px 16px", borderRadius: "999px",
-          background: "var(--app-blue)", color: "#fff",
+          background: "var(--app-blue)", color: "var(--app-on-accent)",
           border: "none", cursor: "pointer",
           fontSize: "12px", fontWeight: 600, fontFamily: T.ff,
         }}>
@@ -1207,7 +1207,7 @@ function DetectedDetail({
               onClick={onClose}
               style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "16px", borderRadius: "16px", background: "var(--app-blue)", border: "none", cursor: "pointer", boxShadow: "0 4px 12px var(--app-blue-glow)" }}
             >
-              <span style={{ fontSize: "15px", fontWeight: 700, color: "#fff", fontFamily: T.ff }}>Close</span>
+              <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--app-on-accent)", fontFamily: T.ff }}>Close</span>
             </button>
           ) : isAdded ? (
             <button
@@ -1231,7 +1231,7 @@ function DetectedDetail({
                 onClick={onAdd}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "16px", borderRadius: "16px", background: "var(--app-blue)", border: "none", cursor: "pointer", boxShadow: "0 4px 12px var(--app-blue-glow)" }}
               >
-                <span style={{ fontSize: "15px", fontWeight: 700, color: "#fff", fontFamily: T.ff }}>Add subscription</span>
+                <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--app-on-accent)", fontFamily: T.ff }}>Add subscription</span>
               </button>
             </>
           )}
@@ -1311,7 +1311,7 @@ function DoneStep({ onConnectAnother, onClose }: { onConnectAnother: () => void;
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <button onClick={onClose} style={{
           padding: "14px", borderRadius: "999px",
-          background: "var(--app-blue)", color: "#fff",
+          background: "var(--app-blue)", color: "var(--app-on-accent)",
           border: "none", cursor: "pointer",
           fontSize: "14px", fontWeight: 600, fontFamily: T.ff,
         }}>
@@ -1429,7 +1429,7 @@ function PrimaryButton({ children, onClick, icon }: { children: React.ReactNode;
   return (
     <button onClick={onClick} style={{
       flex: 2, padding: "12px 16px", borderRadius: "999px",
-      background: "var(--app-blue)", color: "#fff",
+      background: "var(--app-blue)", color: "var(--app-on-accent)",
       border: "none", cursor: "pointer",
       fontSize: "13px", fontWeight: 600, fontFamily: T.ff,
       display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
