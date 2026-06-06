@@ -80,6 +80,7 @@ export default function App() {
         borderRadius: "44px",
         boxShadow: "var(--app-frame-shadow)",
       }}>
+        {showSplash && <SplashScreen />}
         {/* Status bar */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 32px 4px", zIndex: 10, flexShrink: 0 }}>
           <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--app-status-text)", fontFamily: "'DM Mono', monospace", letterSpacing: "0.02em" }}>
@@ -113,7 +114,6 @@ export default function App() {
 
         {/* Screen content */}
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, position: "relative", paddingTop: "8px" }}>
-          {showSplash && <SplashScreen />}
           {screen === "home" && (
             <HomeScreen
               onSelectSubscription={id => setSelectedSubscriptionId(id)}
