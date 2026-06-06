@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sun, Moon } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import { BottomNav, Screen } from "./components/BottomNav";
@@ -11,6 +11,7 @@ import { ProfileScreen } from "./components/ProfileScreen";
 import { SubscriptionDetail } from "./components/SubscriptionDetail";
 import { ConnectAccountScreen } from "./components/ConnectAccountScreen";
 import { AnalyzeScreen } from "./components/AnalyzeScreen";
+import { SplashScreen } from "./components/SplashScreen";
 
 const variantB = new URLSearchParams(window.location.search).get("v") !== "a";
 
@@ -22,6 +23,12 @@ export default function App() {
   const [subsFilterOpen, setSubsFilterOpen] = useState(false);
   const [subsInitialUsageFilter, setSubsInitialUsageFilter] = useState<string | null>(null);
   const [dark, setDark] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowSplash(false), 2500);
+    return () => clearTimeout(t);
+  }, []);
   const [analyzeInitialTab, setAnalyzeInitialTab] = useState<"stats" | "insights">("stats");
 
   const goTo = (s: Screen) => {
@@ -106,6 +113,7 @@ export default function App() {
 
         {/* Screen content */}
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, position: "relative", paddingTop: "8px" }}>
+          {showSplash && <SplashScreen />}
           {screen === "home" && (
             <HomeScreen
               onSelectSubscription={id => setSelectedSubscriptionId(id)}
